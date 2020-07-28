@@ -52,7 +52,8 @@ def read_od_json_gtbox_and_label(od_path):
 
 
 def convert_pv_data_to_tfrecord():
-    data_dir = '/home/faisal/python-microservices/image-recognition/image_recognition/tmp/penetrations_05192020_patchwise_val'
+    # data_dir = '/home/faisal/python-microservices/image-recognition/image_recognition/tmp/penetrations_05192020_patchwise_val'
+    data_dir = '../penetrations_05192020_patchwise_val'
     od_path = data_dir
     image_path = data_dir
     save_name = 'train'
