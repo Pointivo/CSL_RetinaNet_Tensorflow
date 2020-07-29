@@ -1,17 +1,25 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import absolute_import
-from __future__ import print_function
 from __future__ import division
+from __future__ import print_function
 
-import tensorflow as tf
 import os
 import sys
+
+import tensorflow as tf
+
 sys.path.append('../../')
 
 from data.io import image_preprocess_multi_gpu as image_preprocess
 from libs.configs import cfgs
 
+def _decode_image(parsed_tensors):
+    """Decodes the image and set its static shape."""
+    image = tf.image.decode_jpeg(parsed_tensors, channels=3)
+    # image = tf.io.decode_image(parsed_tensors, channels=3)
+    image.set_shape([None, None, 3])
+    return image
 
 def read_single_example_and_decode(filename_queue):
 
@@ -35,7 +43,8 @@ def read_single_example_and_decode(filename_queue):
     img_name = features['img_name']
     img_height = tf.cast(features['img_height'], tf.int32)
     img_width = tf.cast(features['img_width'], tf.int32)
-    img = tf.decode_raw(features['img'], tf.uint8)
+    img = _decode_image(features['img'])
+    # img = tf.decode_raw(features['img'], tf.uint8)
 
     img = tf.reshape(img, shape=[img_height, img_width, 3])
 

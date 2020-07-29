@@ -81,6 +81,8 @@ def convert_pv_data_to_tfrecord():
 
         # img = np.array(Image.open(img_path))
         img = cv2.imread(img_path)[:, :, ::-1]
+        with tf.gfile.GFile(img_path, 'rb') as fid:
+            encoded_jpg = fid.read()
 
         feature = tf.train.Features(feature={
             # do not need encode() in linux
@@ -88,7 +90,8 @@ def convert_pv_data_to_tfrecord():
             # 'img_name': _bytes_feature(img_name),
             'img_height': _int64_feature(img_height),
             'img_width': _int64_feature(img_width),
-            'img': _bytes_feature(img.tostring()),
+            # 'img': _bytes_feature(img.tostring()),
+            'img': _bytes_feature(encoded_jpg),
             'gtboxes_and_label': _bytes_feature(gtbox_label.tostring()),
             'num_objects': _int64_feature(gtbox_label.shape[0])
         })
