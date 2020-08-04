@@ -2,11 +2,14 @@
 from __future__ import division, print_function, absolute_import
 import sys
 
+import PIL.Image as Image
+
 sys.path.append('../../')
 import xml.etree.cElementTree as ET
 import numpy as np
 import tensorflow as tf
 import glob
+import io
 import cv2
 from libs.label_name_dict.label_dict import *
 from help_utils.tools import *
@@ -52,8 +55,8 @@ def read_od_json_gtbox_and_label(od_path):
 
 
 def convert_pv_data_to_tfrecord():
-    # data_dir = '/home/faisal/python-microservices/image-recognition/image_recognition/tmp/penetrations_05192020_patchwise_val'
-    data_dir = '../penetrations_05192020_patchwise_val'
+    data_dir = '/home/faisal/python-microservices/image-recognition/image_recognition/tmp/penetrations_05192020_val_converted'
+    # data_dir = '../penetrations_05192020_patchwise_val'
     od_path = data_dir
     image_path = data_dir
     save_name = 'train'
@@ -80,17 +83,17 @@ def convert_pv_data_to_tfrecord():
         #     continue
 
         # img = np.array(Image.open(img_path))
-        img = cv2.imread(img_path)[:, :, ::-1]
         with tf.gfile.GFile(img_path, 'rb') as fid:
             encoded_jpg = fid.read()
-
+        encoded_jpg_io = io.BytesIO(encoded_jpg)
+        image = Image.open(encoded_jpg_io)
+        image = np.asarray(image)
         feature = tf.train.Features(feature={
             # do not need encode() in linux
             'img_name': _bytes_feature(img_name.encode()),
             # 'img_name': _bytes_feature(img_name),
-            'img_height': _int64_feature(img_height),
-            'img_width': _int64_feature(img_width),
-            # 'img': _bytes_feature(img.tostring()),
+            'img_height': _int64_feature(int(image.shape[0])),
+            'img_width': _int64_feature(int(image.shape[1])),
             'img': _bytes_feature(encoded_jpg),
             'gtboxes_and_label': _bytes_feature(gtbox_label.tostring()),
             'num_objects': _int64_feature(gtbox_label.shape[0])
@@ -101,7 +104,8 @@ def convert_pv_data_to_tfrecord():
         writer.write(example.SerializeToString())
 
         view_bar('Conversion progress', count + 1, len(glob.glob(od_path + '/*.ground_truth.od.json')))
-
+        if count==5:
+            break
     print('\nConversion is complete!')
     writer.close()
 
