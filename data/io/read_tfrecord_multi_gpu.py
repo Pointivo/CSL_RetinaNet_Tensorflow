@@ -108,9 +108,9 @@ def next_batch(dataset_name, batch_size, shortside_len, is_training):
         raise ValueError('dataSet name must be in {}'.format(valid_dataset))
 
     if is_training:
-        pattern = os.path.join('../data/tfrecord', dataset_name + '*_train*')
+        pattern = os.path.join('../tfrecord', dataset_name + '*_train*')
     else:
-        pattern = os.path.join('../data/tfrecord', dataset_name + '_test*')
+        pattern = os.path.join('../tfrecord', dataset_name + '_test*')
 
     print('tfrecord path is -->', os.path.abspath(pattern))
 
@@ -132,7 +132,7 @@ def next_batch(dataset_name, batch_size, shortside_len, is_training):
 
 
 if __name__ == '__main__':
-    os.environ["CUDA_VISIBLE_DEVICES"] = '0,1'
+    os.environ["CUDA_VISIBLE_DEVICES"] = '0'
     num_gpu = len(cfgs.GPU_GROUP.strip().split(','))
     img_name_batch, img_batch, gtboxes_and_label_batch, num_objects_batch, img_h_batch, img_w_batch = \
         next_batch(dataset_name=cfgs.DATASET_NAME,  # 'pascal', 'coco'

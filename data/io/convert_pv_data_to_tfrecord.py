@@ -104,8 +104,6 @@ def convert_pv_data_to_tfrecord():
         writer.write(example.SerializeToString())
 
         view_bar('Conversion progress', count + 1, len(glob.glob(od_path + '/*.ground_truth.od.json')))
-        if count==5:
-            break
     print('\nConversion is complete!')
     writer.close()
 
