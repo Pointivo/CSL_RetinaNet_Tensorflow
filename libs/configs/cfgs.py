@@ -5,40 +5,41 @@ import tensorflow as tf
 import math
 
 """
-v31 +  fix angle cls. bug (line 106 in build_whole_network.py)
+gaussian label, omega=10
+
+
 This is your result for task 1:
 
-    mAP: 0.6543588107658855
-    ap of each class:
-    plane:0.88698521443448,
-    baseball-diamond:0.7501528150879597,
-    bridge:0.4239873364064931,
-    ground-track-field:0.644248754051753,
-    small-vehicle:0.6084107992551275,
-    large-vehicle:0.520710361858383,
-    ship:0.6543472784253033,
-    tennis-court:0.9086048469315559,
-    basketball-court:0.7888374114156529,
-    storage-tank:0.7537908561689395,
-    soccer-ball-field:0.5301397061108213,
-    roundabout:0.6209589882700127,
-    harbor:0.5524852026565777,
-    swimming-pool:0.6527527707421167,
-    helicopter:0.5189698196731068
+    mAP: 0.6738304898085752
+    ap of each class: plane:0.8914335719717486,
+    baseball-diamond:0.7825554534383872,
+    bridge:0.42253905536333874,
+    ground-track-field:0.618954473632168,
+    small-vehicle:0.682804572312177,
+    large-vehicle:0.5450885181789469,
+    ship:0.7285446732619127,
+    tennis-court:0.9086060935169401,
+    basketball-court:0.7934179459801323,
+    storage-tank:0.7558745355233758,
+    soccer-ball-field:0.5327609959142836,
+    roundabout:0.5898646648632354,
+    harbor:0.5310054187218879,
+    swimming-pool:0.6949448883695547,
+    helicopter:0.6290624860805408
 
 The submitted information is :
 
-Description: RetinaNet_DOTA_2x_20200330102.6w
-Username: SJTU-Det
-Institute: SJTU
-Emailadress: yangxue-2019-sjtu@sjtu.edu.cn
-TeamMembers: yangxue
+Description: RetinaNet_DOTA_2x_20200729_75.6w
+Username: DetectionTeamCSU
+Institute: CSU
+Emailadress: yangxue@csu.edu.cn
+TeamMembers: YangXue
+
 
 """
 
 # ------------------------------------------------
-# VERSION = 'RetinaNet_DOTA_2x_20200330'
-VERSION = 'RetinaNet_Penetration_2x_20200727'
+VERSION = 'RetinaNet_DOTA_2x_20200729'
 NET_NAME = 'resnet50_v1d'  # 'MobilenetV2'
 ADD_BOX_IN_TENSORBOARD = True
 
@@ -46,15 +47,12 @@ ADD_BOX_IN_TENSORBOARD = True
 ROOT_PATH = os.path.abspath('../')
 print(20*"++--")
 print(ROOT_PATH)
-# GPU_GROUP = "0,1,2,3"
-GPU_GROUP = "0"
+GPU_GROUP = "0,1,2"
 NUM_GPU = len(GPU_GROUP.strip().split(','))
-# SHOW_TRAIN_INFO_INTE = 20
-SHOW_TRAIN_INFO_INTE = 10
-# SMRY_ITER = 200
-SMRY_ITER = 10
-# SAVE_WEIGHTS_INTE = 27000 * 2
-SAVE_WEIGHTS_INTE = 781 * 1
+SHOW_TRAIN_INFO_INTE = 20
+SMRY_ITER = 200
+SAVE_WEIGHTS_INTE = 27000 * 2
+
 SUMMARY_PATH = ROOT_PATH + '/output/summary'
 TEST_SAVE_PATH = ROOT_PATH + '/tools/test_result'
 
@@ -80,15 +78,15 @@ GRADIENT_CLIPPING_BY_NORM = 10.0  # if None, will not clip
 
 CLS_WEIGHT = 1.0
 REG_WEIGHT = 1.0
-ANGLE_WEIGHT = 0.5
-REG_LOSS_MODE = 1
+ANGLE_WEIGHT = 2.0
+REG_LOSS_MODE = None
 
-BATCH_SIZE = 2
+BATCH_SIZE = 1
 EPSILON = 1e-5
 MOMENTUM = 0.9
 LR = 5e-4
 DECAY_STEP = [SAVE_WEIGHTS_INTE*12, SAVE_WEIGHTS_INTE*16, SAVE_WEIGHTS_INTE*20]
-MAX_ITERATION = SAVE_WEIGHTS_INTE*30
+MAX_ITERATION = SAVE_WEIGHTS_INTE*20
 WARM_SETP = int(1.0 / 4.0 * SAVE_WEIGHTS_INTE)
 
 # -------------------------------------------- Data_preprocess_config
@@ -101,8 +99,8 @@ IMG_SHORT_SIDE_LEN = 800
 IMG_MAX_LENGTH = 800
 CLASS_NUM = 1
 LABEL_TYPE = 0
-RADUIUS = 6
-OMEGA = 1
+RADUIUS = 1
+OMEGA = 10
 
 IMG_ROTATE = False
 RGB2GRAY = False
@@ -129,7 +127,7 @@ ANCHOR_SCALE_FACTORS = None
 USE_CENTER_OFFSET = True
 METHOD = 'H'
 USE_ANGLE_COND = False
-ANGLE_RANGE = 180  # 180 or 90
+ANGLE_RANGE = 180  # 90 or 180
 
 # --------------------------------------------RPN config
 SHARE_NET = True
@@ -141,5 +139,5 @@ NMS = True
 NMS_IOU_THRESHOLD = 0.1
 MAXIMUM_DETECTIONS = 100
 FILTERED_SCORE = 0.05
-VIS_SCORE = 0.2
+VIS_SCORE = 0.4
 

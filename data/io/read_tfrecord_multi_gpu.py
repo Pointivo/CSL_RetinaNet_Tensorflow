@@ -1,14 +1,12 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import absolute_import
-from __future__ import division
 from __future__ import print_function
-
-import os
-import sys
+from __future__ import division
 
 import tensorflow as tf
-
+import os
+import sys
 sys.path.append('../../')
 
 from data.io import image_preprocess_multi_gpu as image_preprocess
@@ -139,7 +137,7 @@ if __name__ == '__main__':
                    batch_size=cfgs.BATCH_SIZE * 8,
                    shortside_len=cfgs.IMG_SHORT_SIDE_LEN,
                    is_training=True)
-    gtboxes_and_label = tf.reshape(gtboxes_and_label_batch, [-1, 9])
+    # gtboxes_and_label = tf.reshape(gtboxes_and_label_batch, [-1, 9])
 
     init_op = tf.group(
         tf.global_variables_initializer(),
