@@ -384,6 +384,9 @@ def train():
                                              str((global_stepnp-1)*num_gpu) + 'model.ckpt')
                     saver.save(sess, save_ckpt)
                     print(' weights had been saved')
+                    # coord.request_stop()
+                    # coord.join(threads)
+                    # sys.exit()
 
             coord.request_stop()
             coord.join(threads)

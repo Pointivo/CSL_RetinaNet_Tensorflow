@@ -222,6 +222,7 @@ def test_dota(det_net, real_test_img_list, args, txt_name):
                                                                                 labels=detected_categories,
                                                                                 scores=detected_scores,
                                                                                 method=1,
+                                                                                head=np.ones_like(detected_scores) * -1,
                                                                                 in_graph=False)
             cv2.imwrite(draw_path, final_detections)
 

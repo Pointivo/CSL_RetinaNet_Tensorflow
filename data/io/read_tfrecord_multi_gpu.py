@@ -106,9 +106,9 @@ def next_batch(dataset_name, batch_size, shortside_len, is_training):
         raise ValueError('dataSet name must be in {}'.format(valid_dataset))
 
     if is_training:
-        pattern = os.path.join('../tfrecord', dataset_name + '*_train*')
+        pattern = os.path.join('../data/tfrecord', dataset_name + '*_train*')
     else:
-        pattern = os.path.join('../tfrecord', dataset_name + '_test*')
+        pattern = os.path.join('../data/tfrecord', dataset_name + '_test*')
 
     print('tfrecord path is -->', os.path.abspath(pattern))
 
