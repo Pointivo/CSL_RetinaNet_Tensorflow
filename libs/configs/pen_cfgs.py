@@ -34,11 +34,13 @@ Institute: SJTU
 Emailadress: yangxue-2019-sjtu@sjtu.edu.cn
 TeamMembers: yangxue
 
+Faisal: used this cfg for training PENTRATION model on MD
+
 """
 
 # ------------------------------------------------
 # VERSION = 'RetinaNet_DOTA_2x_20200330'
-VERSION = 'RetinaNet_Penetration_2x_20200727'
+VERSION = 'RetinaNet_Penetration_ResNet_50_2x_20200805'
 NET_NAME = 'resnet50_v1d'  # 'MobilenetV2'
 ADD_BOX_IN_TENSORBOARD = True
 
@@ -47,14 +49,14 @@ ROOT_PATH = os.path.abspath('../')
 print(20*"++--")
 print(ROOT_PATH)
 # GPU_GROUP = "0,1,2,3"
-GPU_GROUP = "0"
+GPU_GROUP = "0,1"
 NUM_GPU = len(GPU_GROUP.strip().split(','))
 # SHOW_TRAIN_INFO_INTE = 20
-SHOW_TRAIN_INFO_INTE = 10
+SHOW_TRAIN_INFO_INTE = 15
 # SMRY_ITER = 200
-SMRY_ITER = 10
+SMRY_ITER = 200
 # SAVE_WEIGHTS_INTE = 27000 * 2
-SAVE_WEIGHTS_INTE = 450 * 1
+SAVE_WEIGHTS_INTE = 16258 * 2
 SUMMARY_PATH = ROOT_PATH + '/output/summary'
 TEST_SAVE_PATH = ROOT_PATH + '/tools/test_result'
 
@@ -97,17 +99,17 @@ DATASET_NAME = 'PENETRATION'  # 'pascal', 'coco'
 PIXEL_MEAN = [123.68, 116.779, 103.939]  # R, G, B. In tf, channel is RGB. In openCV, channel is BGR
 PIXEL_MEAN_ = [0.485, 0.456, 0.406]
 PIXEL_STD = [0.229, 0.224, 0.225]  # R, G, B. In tf, channel is RGB. In openCV, channel is BGR
-IMG_SHORT_SIDE_LEN = 800
-IMG_MAX_LENGTH = 800
+IMG_SHORT_SIDE_LEN = 1200
+IMG_MAX_LENGTH = 1200
 CLASS_NUM = 1
 LABEL_TYPE = 0
 RADUIUS = 6
 OMEGA = 1
 
-IMG_ROTATE = True
-RGB2GRAY = True
-VERTICAL_FLIP = True
-HORIZONTAL_FLIP = True
+IMG_ROTATE = False
+RGB2GRAY = False
+VERTICAL_FLIP = False
+HORIZONTAL_FLIP = False
 IMAGE_PYRAMID = False
 
 # --------------------------------------------- Network_config
