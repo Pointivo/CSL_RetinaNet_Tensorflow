@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 from __future__ import division, print_function, absolute_import
+
 import sys
 
 import PIL.Image as Image
 
 sys.path.append('../../')
-import xml.etree.cElementTree as ET
 import numpy as np
 import tensorflow as tf
 import glob
@@ -29,15 +29,36 @@ def _bytes_feature(value):
     return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
 
 
-def read_od_json_gtbox_and_label(od_path):
+def read_od_json_gtbox_and_label(od_path, img_w, img_h):
     with open(od_path) as f:
         data = json.load(f)
     img_width = data['height']
     img_height = data['width']
     box_list = []
+    new_w = new_h = cfgs.IMG_SHORT_SIDE_LEN
     bounding_boxes = data['boundingBoxes']
     for bbox in bounding_boxes:
         tmp_box = []
+        x1 = bbox['x1']
+        y1 = bbox['y1']
+        x2 = bbox['x2']
+        y2 = bbox['y2']
+        x3 = bbox['x3']
+        y3 = bbox['y3']
+        x4 = bbox['x4']
+        y4 = bbox['y4']
+        x1, x2, x3, x4 = x1 * new_w // img_w, x2 * new_w // img_w, x3 * new_w // img_w, x4 * new_w // img_w
+        y1, y2, y3, y4 = y1 * new_h // img_h, y2 * new_h // img_h, y3 * new_h // img_h, y4 * new_h // img_h
+        box = np.array((x1, y1, x2, y2, x3, y3, x4, y4))
+
+        box = box.reshape([4, 2])
+        rect1 = cv2.minAreaRect(np.int0(box))
+
+        x, y, w, h, theta = rect1[0][0], rect1[0][1], rect1[1][0], rect1[1][1], rect1[2]
+        if w < 1 or h < 1:
+            print('Ignoring BBox with height/width less 1 pixel')
+            continue
+
         tmp_box.append(bbox['x1'])
         tmp_box.append(bbox['y1'])
         tmp_box.append(bbox['x2'])
@@ -55,7 +76,7 @@ def read_od_json_gtbox_and_label(od_path):
 
 
 def convert_pv_data_to_tfrecord():
-    data_dir = '/home/faisal/python-microservices/image-recognition/image_recognition/tmp/penetrations_05192020_val_converted'
+    data_dir = '/mnt/1tbssd/adnan/python-microservices/image-recognition/image_recognition/tmp/penetrations_05192020_train'
     # data_dir = '../penetrations_05192020_patchwise_val'
     od_path = data_dir
     image_path = data_dir
@@ -69,29 +90,26 @@ def convert_pv_data_to_tfrecord():
     # writer_options = tf.python_io.TFRecordOptions(tf.python_io.TFRecordCompressionType.ZLIB)
     # writer = tf.python_io.TFRecordWriter(path=save_path, options=writer_options)
     writer = tf.python_io.TFRecordWriter(path=save_path)
-    for count, od in enumerate(glob.glob(od_path + '/*.ground_truth.od.json')):
+    for count, od in enumerate(glob.glob(od_path + '/*_oriented.ground_truth.od.json')):
 
-        img_name = od.split('/')[-1].split('.')[0] + img_format
+        img_name = od.split('/')[-1].split('.')[0][:-9] + img_format
         img_path = image_path + '/' + img_name
 
         if not os.path.exists(img_path):
             print('{} is not exist!'.format(img_path))
             continue
 
-        img_height, img_width, gtbox_label = read_od_json_gtbox_and_label(od)
-        # if img_height != 600 or img_width != 600:
-        #     continue
-
-        # img = np.array(Image.open(img_path))
         with tf.gfile.GFile(img_path, 'rb') as fid:
             encoded_jpg = fid.read()
+
         encoded_jpg_io = io.BytesIO(encoded_jpg)
         image = Image.open(encoded_jpg_io)
         image = np.asarray(image)
+
+        _, _, gtbox_label = read_od_json_gtbox_and_label(od, image.shape[0], image.shape[1])
+
         feature = tf.train.Features(feature={
-            # do not need encode() in linux
             'img_name': _bytes_feature(img_name.encode()),
-            # 'img_name': _bytes_feature(img_name),
             'img_height': _int64_feature(int(image.shape[0])),
             'img_width': _int64_feature(int(image.shape[1])),
             'img': _bytes_feature(encoded_jpg),
@@ -103,13 +121,11 @@ def convert_pv_data_to_tfrecord():
 
         writer.write(example.SerializeToString())
 
-        view_bar('Conversion progress', count + 1, len(glob.glob(od_path + '/*.ground_truth.od.json')))
+        view_bar('Conversion progress', count + 1, len(glob.glob(od_path + '/*_oriented.ground_truth.od.json')))
+
     print('\nConversion is complete!')
     writer.close()
 
 
 if __name__ == '__main__':
-    # xml_path = '../data/dataset/VOCdevkit/VOC2007/Annotations/000005.xml'
-    # read_xml_gtbox_and_label(xml_path)
-
     convert_pv_data_to_tfrecord()
