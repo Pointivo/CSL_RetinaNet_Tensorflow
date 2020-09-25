@@ -284,7 +284,7 @@ def run_validation(test_dir, step, args):
 
     csl_val = build_whole_network.DetectionNetwork(base_network_name=cfgs.NET_NAME,
                                                    is_training=False)
-    all_boxes = detect(det_net=csl_val, val_images_list=val_images_list[:5], args=args)
+    all_boxes = detect(det_net=csl_val, val_images_list=val_images_list, args=args)
 
     detections = []
     for boxes in all_boxes:
@@ -320,7 +320,7 @@ def run_validation(test_dir, step, args):
         class_bboxes[image_path] = {'bbox': bbox, 'det': det}
 
     recall, precision, ap = compute_metrics(detections=detections, annotations=class_bboxes, num_bboxes=num_bboxes,
-                                            cls_name='penetration', ovthresh=0.2)
+                                            cls_name='penetration', ovthresh=0.5)
 
     # writing these metrics to tensorboard
     summary_path = os.path.join(cfgs.SUMMARY_PATH, cfgs.VERSION)
