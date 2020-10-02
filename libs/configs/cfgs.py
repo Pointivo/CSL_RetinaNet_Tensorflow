@@ -51,9 +51,9 @@ print(20*"++--")
 print(ROOT_PATH)
 GPU_GROUP = "0,1"
 NUM_GPU = len(GPU_GROUP.strip().split(','))
-SHOW_TRAIN_INFO_INTE = 100
-SMRY_ITER = 1000
-SAVE_WEIGHTS_INTE = 4000  # no. of training images ~ 16,000
+SHOW_TRAIN_INFO_INTE = 50
+SMRY_ITER = 2000
+SAVE_WEIGHTS_INTE = 2000  # no. of training images ~ 16,000
 SUMMARY_PATH = ROOT_PATH + '/output/summary'
 TEST_SAVE_PATH = ROOT_PATH + '/tools/test_result'
 
