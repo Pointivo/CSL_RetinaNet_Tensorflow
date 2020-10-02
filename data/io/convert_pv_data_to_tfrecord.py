@@ -144,7 +144,7 @@ def _remove_bbox_smaller_than_thresh_after_resizing(bboxes: np.ndarray, image_si
     scale = new_image_size / image_size
     bboxes_to_keep = []
     for bbox in bboxes:
-        if not _check_if_box_is_smaller_than_thresh_after_scaling(box=bbox, x_scale=scale, y_scale=scale,
+        if not _check_if_box_is_smaller_than_thresh_after_scaling(bbox=bbox, x_scale=scale, y_scale=scale,
                                                                   box_dim_thresh=min_box_dim_thresh):
             bboxes_to_keep.append(bbox)
     return np.array(bboxes_to_keep)
