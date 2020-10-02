@@ -318,7 +318,7 @@ def train():
         summary_op = tf.summary.merge_all()
 
         restorer, restore_ckpt = csl.get_restorer()
-        saver = tf.train.Saver(max_to_keep=5)
+        saver = tf.train.Saver(max_to_keep=50000)
 
         init_op = tf.group(
             tf.global_variables_initializer(),
