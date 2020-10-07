@@ -286,8 +286,9 @@ class DetectionNetwork(object):
         else:
             return boxes, scores, category, boxes_angle
 
-    def get_restorer(self):
-        checkpoint_path = tf.train.latest_checkpoint(os.path.join(cfgs.TRAINED_CKPT, cfgs.VERSION))
+    def get_restorer(self, checkpoint_path=None):
+        if checkpoint_path is None:
+            checkpoint_path = tf.train.latest_checkpoint(os.path.join(cfgs.TRAINED_CKPT, cfgs.VERSION))
 
         if checkpoint_path != None:
             if cfgs.RESTORE_FROM_RPN:
