@@ -286,12 +286,12 @@ def _get_detections_from_csl_predictions(csl_predictions: List) -> List:
     return detections
 
 
-def _write_tensorboard_summaries(step: int, mAP: float, optimal_conf_thresh: float, optimal_precision: float,
+def _write_tensorboard_summaries(step: int, ap50: float, optimal_conf_thresh: float, optimal_precision: float,
                                  optimal_recall: float, optimal_f1_score: float):
     summary_file_path = os.path.join(cfgs.SUMMARY_PATH, cfgs.VERSION)
     summary_writer = tf.summary.FileWriter(summary_file_path)
 
-    summary = tf.Summary(value=[tf.Summary.Value(tag='mAP', simple_value=mAP)])
+    summary = tf.Summary(value=[tf.Summary.Value(tag='AP50', simple_value=ap50)])
     summary_writer.add_summary(summary=summary, global_step=step)
 
     summary = tf.Summary(value=[tf.Summary.Value(tag='optimal_conf_thresh', simple_value=optimal_conf_thresh)])
@@ -342,7 +342,7 @@ def run_validation(dataset_dir: Path, class_name_to_label_map: Dict[str, int], c
         optimal_f1_score = optimal_conf_thresh = optimal_precision = optimal_recall = 0
 
     # writing these metrics to tensorboard
-    _write_tensorboard_summaries(step=step, mAP=ap, optimal_f1_score=optimal_f1_score, optimal_recall=optimal_recall,
+    _write_tensorboard_summaries(step=step, ap50=ap, optimal_f1_score=optimal_f1_score, optimal_recall=optimal_recall,
                                  optimal_conf_thresh=optimal_conf_thresh, optimal_precision=optimal_precision)
 
 
