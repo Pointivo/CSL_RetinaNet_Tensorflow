@@ -337,7 +337,7 @@ def run_validation(dataset_dir: Path, class_name_to_label_map: Dict[str, int], c
         optimal_conf_thresh = confidences[max_f1_score_idx]
         optimal_f1_score = f1_score[max_f1_score_idx]
         optimal_precision = precision[max_f1_score_idx]
-        optimal_recall = precision[max_f1_score_idx]
+        optimal_recall = recall[max_f1_score_idx]
     else:
         optimal_f1_score = optimal_conf_thresh = optimal_precision = optimal_recall = 0
 
