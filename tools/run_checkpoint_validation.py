@@ -309,6 +309,15 @@ def _write_tensorboard_summaries(step: int, ap50: float, optimal_conf_thresh: fl
     summary_writer.flush()
 
 
+def _print_metrics(ap50: float, optimal_conf_thresh: float, optimal_precision: float, optimal_recall: float,
+                   optimal_f1_score: float):
+    print(f'AP50\t\t\t\t = {ap50:0.3f}')
+    print(f'optimal_conf_thresh\t = {optimal_conf_thresh:0.3f}')
+    print(f'optimal_f1_score\t = {optimal_f1_score:0.3f}')
+    print(f'optimal_precision\t = {optimal_precision:0.3f}')
+    print(f'optimal_recall\t\t = {optimal_recall:0.3f}')
+
+
 def run_validation(dataset_dir: Path, class_name_to_label_map: Dict[str, int], checkpoint_path: Path,
                    args: argparse.Namespace):
     image_paths = [str(p) for p in dataset_dir.glob('*') if p.name.endswith(('.jpg', '.png', '.jpeg', '.tif', '.tiff'))]
@@ -344,10 +353,12 @@ def run_validation(dataset_dir: Path, class_name_to_label_map: Dict[str, int], c
     # writing these metrics to tensorboard
     _write_tensorboard_summaries(step=step, ap50=ap, optimal_f1_score=optimal_f1_score, optimal_recall=optimal_recall,
                                  optimal_conf_thresh=optimal_conf_thresh, optimal_precision=optimal_precision)
-
+    _print_metrics(ap50=ap, optimal_f1_score=optimal_f1_score, optimal_recall=optimal_recall,
+                   optimal_conf_thresh=optimal_conf_thresh, optimal_precision=optimal_precision)
 
 def get_all_checkpoints_from_checkpoint_dir(checkpoint_dir: Path) -> List[Path]:
     checkpoint_paths = tf.train.get_checkpoint_state(str(checkpoint_dir)).all_model_checkpoint_paths
+    assert checkpoint_paths is not None, 'Something went wrong!!! Make sure checkpoint file is correct and present.'
     return [Path(checkpoint_path) for checkpoint_path in checkpoint_paths]
 
 
