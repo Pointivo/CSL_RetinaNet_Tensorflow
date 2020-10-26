@@ -41,7 +41,7 @@ penetrations detection training.
 """
 
 # ------------------------------------------------
-VERSION = 'RetinaNet_Penetration_4x_02_Oct_2020'
+VERSION = 'RetinaNet_Penetration_Patchwise_4x_26_Oct_2020'
 NET_NAME = 'resnet152_v1d'  # 'MobilenetV2'
 ADD_BOX_IN_TENSORBOARD = True
 
@@ -52,8 +52,8 @@ print(ROOT_PATH)
 GPU_GROUP = "0,1"
 NUM_GPU = len(GPU_GROUP.strip().split(','))
 SHOW_TRAIN_INFO_INTE = 50
-SMRY_ITER = 2000
-SAVE_WEIGHTS_INTE = 2000  # no. of training images ~ 16,000
+SMRY_ITER = 5000
+SAVE_WEIGHTS_INTE = 5000  # no. of training images ~ 80,000
 SUMMARY_PATH = ROOT_PATH + '/output/summary'
 TEST_SAVE_PATH = ROOT_PATH + '/tools/test_result'
 
@@ -86,9 +86,9 @@ BATCH_SIZE = 1
 EPSILON = 1e-5
 MOMENTUM = 0.9
 LR = 5e-4
-DECAY_STEP = [int(16000*13), int(16000*17), int(16000*21)]
-MAX_ITERATION = int(16000*21)
-WARM_SETP = 16000
+DECAY_STEP = [int(80e3*13), int(80e3*17), int(80e3*21)]
+MAX_ITERATION = int(80e3*21)
+WARM_SETP = int(80e3)
 
 # -------------------------------------------- Data_preprocess_config
 DATASET_NAME = 'PENETRATION'  # 'pascal', 'coco'
