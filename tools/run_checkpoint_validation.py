@@ -309,6 +309,17 @@ def _write_tensorboard_summaries(step: int, ap50: float, optimal_conf_thresh: fl
     summary_writer.flush()
 
 
+def print_metrics(ap50: float, optimal_conf_thresh: float, optimal_precision: float, optimal_recall: float,
+                  optimal_f1_score: float):
+    print('+-' * 100)
+    print(f'ap50                = {ap50:0.4f}.')
+    print(f'optimal_conf_thresh = {optimal_conf_thresh:0.4f}.')
+    print(f'optimal_precision   = {optimal_precision:0.4f}.')
+    print(f'optimal_recall      = {optimal_recall:0.4f}.')
+    print(f'optimal_f1_score    = {optimal_f1_score:0.4f}.')
+    print('+-' * 100)
+
+
 def run_validation(dataset_dir: Path, class_name_to_label_map: Dict[str, int], checkpoint_path: Path,
                    args: argparse.Namespace):
     image_paths = [str(p) for p in dataset_dir.glob('*') if p.name.endswith(('.jpg', '.png', '.jpeg', '.tif', '.tiff'))]
@@ -330,7 +341,7 @@ def run_validation(dataset_dir: Path, class_name_to_label_map: Dict[str, int], c
     recall, precision, ap, confidences = compute_metrics(detections=detections, annotations=class_bboxes,
                                                          num_bboxes=num_bboxes, cls_name=class_name,
                                                          ovthresh=args.tp_iou_thresh)
-    assert recall.shape == precision.shape, f'Something went wrong!!! Recall and precisions donot have the same shape.'
+    assert recall.shape == precision.shape, f'Something went wrong!!! Recall and precisions do not have the same shape.'
     f1_score = 2 * recall * precision / (recall + precision + np.finfo(np.float64).eps)
     if f1_score.size > 0:
         max_f1_score_idx = np.argmax(f1_score)
@@ -341,15 +352,24 @@ def run_validation(dataset_dir: Path, class_name_to_label_map: Dict[str, int], c
     else:
         optimal_f1_score = optimal_conf_thresh = optimal_precision = optimal_recall = 0
 
+    # print metrics
+    if args.print_metrics:
+        print_metrics(ap50=ap, optimal_f1_score=optimal_f1_score, optimal_recall=optimal_recall,
+                      optimal_conf_thresh=optimal_conf_thresh, optimal_precision=optimal_precision)
+
     # writing these metrics to tensorboard
-    _write_tensorboard_summaries(step=step, ap50=ap, optimal_f1_score=optimal_f1_score, optimal_recall=optimal_recall,
-                                 optimal_conf_thresh=optimal_conf_thresh, optimal_precision=optimal_precision)
+    if not args.dont_write_to_tensorboard:
+        _write_tensorboard_summaries(step=step, ap50=ap, optimal_f1_score=optimal_f1_score,
+                                     optimal_recall=optimal_recall, optimal_conf_thresh=optimal_conf_thresh,
+                                     optimal_precision=optimal_precision)
 
 
 def get_all_checkpoints_from_checkpoint_dir(checkpoint_dir: Path) -> List[Path]:
     checkpoint_paths = tf.train.get_checkpoint_state(str(checkpoint_dir)).all_model_checkpoint_paths
-    return [Path(checkpoint_path) for checkpoint_path in checkpoint_paths]
-
+    checkpoint_paths = [Path(checkpoint_path) for checkpoint_path in checkpoint_paths]
+    # paths in checkpoint files might be different from checkpoint_dir
+    checkpoint_paths = [checkpoint_dir / path.name for path in checkpoint_paths]
+    return checkpoint_paths
 
 def get_step_from_checkpoint_path(checkpoint_path: Path) -> int:
     checkpoint_stem_name = checkpoint_path.stem
@@ -361,26 +381,47 @@ def get_step_from_checkpoint_path(checkpoint_path: Path) -> int:
     return int(checkpoint_suffix.split('model')[0])
 
 
+def get_checkpoint_path_for_step_number(checkpoint_dir: Path, step_number: int) -> Path:
+    checkpoint_path_for_step = None
+    for checkpoint_path in get_all_checkpoints_from_checkpoint_dir(checkpoint_dir=checkpoint_dir):
+        if step_number == get_step_from_checkpoint_path(checkpoint_path=checkpoint_path):
+            checkpoint_path_for_step = checkpoint_path
+    assert checkpoint_path_for_step is not None, f'Could not find checkpoint for step_number={step_number}.'
+    return checkpoint_path_for_step
+
+
 def run_validation_on_dataset(args: argparse.Namespace, class_name_to_label_map: Dict[str, int]):
     dataset_dir = Path(args.dataset_dir)
-    checkpoint_dir = Path(cfgs.TRAINED_CKPT) / cfgs.VERSION
-    all_checkpoint_paths = get_all_checkpoints_from_checkpoint_dir(checkpoint_dir=checkpoint_dir)
-    print(f'Found {len(all_checkpoint_paths)} number of checkpoints under {checkpoint_dir}.')
+    checkpoint_dir = Path(args.checkpoint_dir)
+    if args.checkpoint_at_step_to_evaluate is None:
+        all_checkpoint_paths = get_all_checkpoints_from_checkpoint_dir(checkpoint_dir=checkpoint_dir)
+        print(f'Found {len(all_checkpoint_paths)} number of checkpoints under {checkpoint_dir}.')
 
-    for checkpoint_path in all_checkpoint_paths:
-        print('+-' * 100)
+        for checkpoint_path in all_checkpoint_paths:
+            print('+-' * 100)
+            run_validation(dataset_dir=dataset_dir, checkpoint_path=checkpoint_path, args=args,
+                           class_name_to_label_map=class_name_to_label_map)
+            tf.reset_default_graph()
+            print('+-' * 100)
+    else:
+        step_to_evaluate = args.checkpoint_at_step_to_evaluate
+        checkpoint_path = get_checkpoint_path_for_step_number(checkpoint_dir, step_number=step_to_evaluate)
         run_validation(dataset_dir=dataset_dir, checkpoint_path=checkpoint_path, args=args,
                        class_name_to_label_map=class_name_to_label_map)
-        tf.reset_default_graph()
-        print('+-' * 100)
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description='Calculating validation metrics for model checkpoints.')
+    parser = argparse.ArgumentParser(description='Calculate validation metrics for model checkpoints.')
     parser.add_argument('--dataset_dir', dest='dataset_dir', help='val data path', type=str)
+    parser.add_argument('--checkpoint_dir', dest='checkpoint_dir', type=str, required=True)
     parser.add_argument('--gpu', dest='gpu', help='gpu id ', default='0', type=str)
     parser.add_argument('--rotated_iou_thresh', dest='rotated_iou_thresh', default=0.1, type=float)
     parser.add_argument('--tp_iou_thresh', dest='tp_iou_thresh', default=0.5, type=float)
+    parser.add_argument('--checkpoint_at_step_to_evaluate', dest='checkpoint_at_step_to_evaluate', default=None,
+                        type=int)
+    parser.add_argument('--dont_write_to_tensorboard', dest='dont_write_to_tensorboard', default=False,
+                        action='store_true')
+    parser.add_argument('--print_metrics', dest='print_metrics', default=False, action='store_true')
     args = parser.parse_args()
     return args
 
