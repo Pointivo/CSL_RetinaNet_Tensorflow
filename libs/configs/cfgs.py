@@ -52,8 +52,8 @@ print(ROOT_PATH)
 GPU_GROUP = "0,1"
 NUM_GPU = len(GPU_GROUP.strip().split(','))
 SHOW_TRAIN_INFO_INTE = 50
-SMRY_ITER = 5000
-SAVE_WEIGHTS_INTE = 5000  # no. of training images ~ 80,000
+SMRY_ITER = 1000
+SAVE_WEIGHTS_INTE = 2000  # no. of training images ~ 80,000
 SUMMARY_PATH = ROOT_PATH + '/output/summary'
 TEST_SAVE_PATH = ROOT_PATH + '/tools/test_result'
 
@@ -86,8 +86,8 @@ BATCH_SIZE = 1
 EPSILON = 1e-5
 MOMENTUM = 0.9
 LR = 5e-4
-DECAY_STEP = [int(80e3*13), int(80e3*17), int(80e3*21)]
-MAX_ITERATION = int(80e3*21)
+DECAY_STEP = [int(90e3), int(80e3*3), int(80e3*5)]
+MAX_ITERATION = int(80e3*5)
 WARM_SETP = int(80e3)
 
 # -------------------------------------------- Data_preprocess_config
