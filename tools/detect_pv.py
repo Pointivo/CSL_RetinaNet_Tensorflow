@@ -52,7 +52,7 @@ def _pad_image_with_zeros(image_np: np.ndarray) -> np.ndarray:
         return padded_image
 
 
-def get_checkpoint_path_from_checkpoint_dir(checkpoint_dir: Path) -> List[Path]:
+def get_checkpoint_path_from_checkpoint_dir(checkpoint_dir: Path) -> Path:
     checkpoint_paths = tf.train.get_checkpoint_state(str(checkpoint_dir)).all_model_checkpoint_paths
     checkpoint_paths = [Path(checkpoint_path) for checkpoint_path in checkpoint_paths]
     # paths in checkpoint files might be different from checkpoint_dir
