@@ -8,7 +8,7 @@ import argparse
 import os
 import sys
 from pathlib import Path
-from typing import List, Dict
+from typing import List, Dict, Optional
 
 import cv2
 import numpy as np
@@ -23,11 +23,9 @@ from libs.box_utils import draw_box_in_img
 from libs.box_utils.coordinate_convert import forward_convert, backward_convert
 from libs.box_utils import nms_rotate
 from libs.box_utils.rotate_polygon_nms import rotate_gpu_nms
-
-NAME_LABEL_MAP = {
-    'back_ground': 0,
-    'penetration': 1
-}
+from image_recognition.app.dvo.bbox_2d.oriented_bbox_2d import OrientedBbox2D
+from image_recognition.app.dvo.ground_truths.object_detection import ObjectDetectionLabeledData
+from image_recognition.app.data.dataset import Dataset, DataSignatures
 
 
 def _scale_bbox(bbox: np.ndarray, x_scale: float, y_scale: float) -> np.ndarray:
@@ -54,7 +52,17 @@ def _pad_image_with_zeros(image_np: np.ndarray) -> np.ndarray:
         return padded_image
 
 
-def get_csl_prediction_results(gpu_id: int, images: List[str], det_net: DetectionNetwork, rotated_iou_thresh: float):
+def get_checkpoint_path_from_checkpoint_dir(checkpoint_dir: Path) -> List[Path]:
+    checkpoint_paths = tf.train.get_checkpoint_state(str(checkpoint_dir)).all_model_checkpoint_paths
+    checkpoint_paths = [Path(checkpoint_path) for checkpoint_path in checkpoint_paths]
+    # paths in checkpoint files might be different from checkpoint_dir
+    checkpoint_paths = [checkpoint_dir / path.name for path in checkpoint_paths]
+    assert len(checkpoint_paths) == 1, f'There should be only 1 checkpoint in the checkpoint directory'
+    return checkpoint_paths[0]
+
+
+def get_csl_prediction_results(gpu_id: int, images: List[str], det_net: DetectionNetwork, rotated_iou_thresh: float,
+                               checkpoint_path: Optional[str] = None):
     os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
     img_plac = tf.placeholder(dtype=tf.uint8, shape=[None, None, 3])  # is RGB. not BGR
     img_batch = tf.cast(img_plac, tf.float32)
@@ -70,7 +78,7 @@ def get_csl_prediction_results(gpu_id: int, images: List[str], det_net: Detectio
 
     init_op = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
 
-    restorer, restore_ckpt = det_net.get_restorer()
+    restorer, restore_ckpt = det_net.get_restorer(checkpoint_path=checkpoint_path)
 
     config = tf.ConfigProto()
     config.gpu_options.allow_growth = True
@@ -143,17 +151,40 @@ def get_csl_prediction_results(gpu_id: int, images: List[str], det_net: Detectio
     return prediction_results
 
 
-def save_detections_for_images(det_net: DetectionNetwork, real_test_img_list: List[str], args: argparse.Namespace,
-                               txt_name: str, class_name_to_label_map: Dict[str, int]):
-    save_path = os.path.join(args.save_dir, cfgs.VERSION)
-    prediction_results = get_csl_prediction_results(gpu_id=args.gpu, images=real_test_img_list, det_net=det_net,
-                                                    rotated_iou_thresh=args.rotated_iou_thresh)
+def get_image_paths_from_dataset_dir(dataset_dir: str, eval_num: int) -> List[str]:
+    dataset_image_paths = [os.path.join(dataset_dir, img_name) for img_name in os.listdir(dataset_dir)
+                           if img_name.endswith(('.jpg', '.png', '.jpeg', '.tif', '.tiff'))]
+    assert len(dataset_image_paths) > 0, 'dataset_dir has no imgs: we only support .jpg, .png, and .tiff image formats.'
 
-    if args.show_box:
+    dataset_image_paths = dataset_image_paths if eval_num == np.inf else dataset_image_paths[:args.eval_num]
+    return dataset_image_paths
+
+
+def get_class_names_from_class_labels(class_labels: List[int], class_name_to_label_map: Dict[str, int]) -> List[str]:
+    class_names = []
+    for class_label in class_labels:
+        for cls_name, cls_lbl in class_name_to_label_map.items():
+            if cls_lbl == class_label:
+                class_names.append(cls_name)
+    assert len(class_labels) == len(class_names)
+    return class_names
+
+
+def save_detections_for_images(det_net: DetectionNetwork, class_name_to_label_map: Dict[str, int],
+                               args: argparse.Namespace):
+    image_paths = get_image_paths_from_dataset_dir(dataset_dir=args.dataset_dir, eval_num=args.eval_num)
+    checkpoint_path = get_checkpoint_path_from_checkpoint_dir(checkpoint_dir=Path(args.checkpoint_dir))
+    prediction_results = get_csl_prediction_results(gpu_id=args.gpu, images=image_paths, det_net=det_net,
+                                                    rotated_iou_thresh=args.rotated_iou_thresh,
+                                                    checkpoint_path=str(checkpoint_path))
+
+    if args.mode == 'vis':
+        print(f'Saving visualizations in {args.save_vis_dir}.')
+        assert args.save_vis_dir is not None, f'save_vis_dir cannot be None if mode is set to vis'
         for prediction_result in prediction_results:
             image_name = Path(prediction_result['image_id']).name
-            tools.mkdir(os.path.join(save_path, 'img_vis'))
-            draw_path = os.path.join(save_path, 'img_vis', image_name)
+            tools.mkdir(args.save_vis_dir)
+            draw_path = os.path.join(args.save_vis_dir, image_name)
 
             detected_indices = prediction_result['scores'] >= args.conf_thresh
             detected_scores = prediction_result['scores'][detected_indices]
@@ -168,76 +199,48 @@ def save_detections_for_images(det_net: DetectionNetwork, real_test_img_list: Li
                                                                                 head=np.ones_like(detected_scores) * -1,
                                                                                 in_graph=False)
             cv2.imwrite(draw_path, final_detections)
-
-    else:
-        class_names = class_name_to_label_map.keys()
+    elif args.mode == 'save_pred_od':
+        print(f"Saving .prediction.od.json's in dataset_dir.")
+        dataset = Dataset(dataset_dir=Path(args.dataset_dir))
         for prediction_result in prediction_results:
-            write_handle = {}
+            detected_indices = prediction_result['scores'] >= args.conf_thresh
+            confidence_scores = prediction_result['scores'][detected_indices]
+            detected_boxes = prediction_result['boxes'][detected_indices]
+            detected_categories = prediction_result['labels'][detected_indices]
 
-            tools.mkdir(os.path.join(save_path, 'detections'))
-            for sub_class in class_names:
-                if sub_class == 'back_ground':
-                    continue
-                write_handle[sub_class] = open(os.path.join(save_path, 'detections', 'Task1_%s.txt' % sub_class), 'a+')
+            class_names = get_class_names_from_class_labels(class_labels=detected_categories,
+                                                            class_name_to_label_map=class_name_to_label_map)
 
-            rboxes = forward_convert(prediction_result['boxes'], with_label=False)
+            image_name = Path(prediction_result['image_id']).stem
+            rotated_boxes = forward_convert(detected_boxes, with_label=False)
 
-            for i, rbox in enumerate(rboxes):
-                command = '%s %.3f %.1f %.1f %.1f %.1f %.1f %.1f %.1f %.1f\n' % (
-                    Path(prediction_result['image_id']).stem, prediction_result['scores'][i],
-                    rbox[0], rbox[1], rbox[2], rbox[3], rbox[4], rbox[5], rbox[6], rbox[7],)
-                write_handle[LABEL_NAME_MAP[prediction_result['labels'][i]]].write(command)
-
-            for sub_class in class_names:
-                if sub_class == 'back_ground':
-                    continue
-                write_handle[sub_class].close()
-
-            fw = open(txt_name, 'a+')
-            fw.write('{}\n'.format(prediction_result['image_id'].split('/')[-1]))
-            fw.close()
+            ic = dataset.get_data_from_file(data_signature=DataSignatures.ic, file_name_stem=Path(image_name).stem)
+            obboxes2d = []
+            for rotated_box, score, class_name in zip(rotated_boxes, confidence_scores, class_names):
+                x1, y1, x2, y2, x3, y3, x4, y4 = rotated_box
+                obbox2d = OrientedBbox2D(x1=x1, y1=y1, x2=x2, y2=y2, x3=x3, y3=y3, x4=x4, y4=y4, confidence_score=score,
+                                         class_label=class_name)
+                obboxes2d.append(obbox2d)
+            pred_od = ObjectDetectionLabeledData(image_name=image_name, bounding_boxes=obboxes2d, width=ic.width,
+                                                 height=ic.height)
+            dataset.save_od_json(od=pred_od, data_signature=DataSignatures.od_predicted)
+    else:
+        raise AssertionError(f"mode is not supported: Got mode={args.mode}. Set to either 'vis' or 'save_pred_od'.")
 
 
 def detect(args: argparse.Namespace, class_name_to_label_map: Dict[str, int]):
-    txt_name = '{}.txt'.format(cfgs.VERSION)
-    if not args.show_box:
-        if not os.path.exists(txt_name):
-            fw = open(txt_name, 'w')
-            fw.close()
-
-        fr = open(txt_name, 'r')
-        img_filter = fr.readlines()
-        print('****************************' * 3)
-        print('Already tested imgs:', img_filter)
-        print('****************************' * 3)
-        fr.close()
-
-        test_imgname_list = [os.path.join(args.test_dir, img_name) for img_name in os.listdir(args.test_dir)
-                             if img_name.endswith(('.jpg', '.png', '.jpeg', '.tif', '.tiff')) and
-                             (img_name + '\n' not in img_filter)]
-    else:
-        test_imgname_list = [os.path.join(args.test_dir, img_name) for img_name in os.listdir(args.test_dir)
-                             if img_name.endswith(('.jpg', '.png', '.jpeg', '.tif', '.tiff'))]
-
-    assert len(test_imgname_list) != 0, 'test_dir has no imgs there.' \
-                                        ' Note that, we only support img format of (.jpg, .png, and .tiff) '
-
-    real_test_img_list = test_imgname_list if args.eval_num == np.inf else test_imgname_list[:args.eval_num]
     csl_net = DetectionNetwork(base_network_name=cfgs.NET_NAME, is_training=False)
-    save_detections_for_images(det_net=csl_net, real_test_img_list=real_test_img_list, args=args, txt_name=txt_name,
-                               class_name_to_label_map=class_name_to_label_map)
-
-    if not args.show_box:
-        os.remove(txt_name)
+    save_detections_for_images(det_net=csl_net, class_name_to_label_map=class_name_to_label_map, args=args)
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--test_dir', dest='test_dir', help='evaluate imgs dir ', required=True, type=str)
-    parser.add_argument('--save_dir', dest='save_dir', help='img visualize dir', required=True, type=str)
-    parser.add_argument('--show_box', '-s', default=False, action='store_true')
-    parser.add_argument('--conf_thresh', dest='conf_thresh', default=0.4, type=float)
+    parser.add_argument('--dataset_dir', dest='dataset_dir', help='dataset with images', required=True, type=str)
+    parser.add_argument('--checkpoint_dir', dest='checkpoint_dir', required=True, type=str)
+    parser.add_argument('--mode', dest='mode', help='set to either vis or save_pred_od', required=True, type=str)
+    parser.add_argument('--conf_thresh', dest='conf_thresh', default=0.1, type=float)
     parser.add_argument('--rotated_iou_thresh', dest='rotated_iou_thresh', default=0.1, type=float)
+    parser.add_argument('--save_vis_dir', dest='save_vis_dir', help='img visualize dir', default=None, type=str)
     parser.add_argument('--eval_num', dest='eval_num', help='the num of eval imgs', default=np.inf, type=int)
     parser.add_argument('--gpu', dest='gpu', help='gpu id', default='0', type=str)
     args = parser.parse_args()
