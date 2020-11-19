@@ -211,7 +211,7 @@ def save_detections_for_images(det_net: DetectionNetwork, class_name_to_label_ma
             class_names = get_class_names_from_class_labels(class_labels=detected_categories,
                                                             class_name_to_label_map=class_name_to_label_map)
 
-            image_name = Path(prediction_result['image_id'])
+            image_name = Path(prediction_result['image_id']).name
             rotated_boxes = forward_convert(detected_boxes, with_label=False)
 
             ic = dataset.get_data_from_file(data_signature=DataSignatures.ic, file_name_stem=Path(image_name).stem)
