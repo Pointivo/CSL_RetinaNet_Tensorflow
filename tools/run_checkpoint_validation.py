@@ -19,23 +19,22 @@ sys.path.append("../")
 from libs.box_utils.coordinate_convert import forward_convert, backward_convert
 from libs.label_name_dict.label_dict import *
 from libs.networks.build_whole_network import DetectionNetwork
-from libs.box_utils import iou_rotate
 
 from libs.box_utils import nms_rotate
 from libs.box_utils.rotate_polygon_nms import rotate_gpu_nms
+from image_recognition.app.dvo.bbox_2d.oriented_bbox_2d import OrientedBbox2D
+from image_recognition.app.dvo.ground_truths.object_detection import ObjectDetectionLabeledData
 
 
 def _get_bounding_boxes_from_od_json_file(od_file_path: Path, class_name_to_label_map: Dict[str, int]) -> np.ndarray:
-    with od_file_path.open() as f:
-        od_data = json.load(f)
+    od = ObjectDetectionLabeledData.from_json_file(od_file_path)
     bounding_boxes = []
-    for bbox in od_data['boundingBoxes']:
-        x1, x2, x3, x4 = bbox['x1'], bbox['x2'], bbox['x3'], bbox['x4']
-        y1, y2, y3, y4 = bbox['y1'], bbox['y2'], bbox['y3'], bbox['y4']
-        class_label = class_name_to_label_map[bbox['classLabel']]
-        bbox = [x1, y1, x2, y2, x3, y3, x4, y4, class_label]
-        bounding_boxes.append(bbox)
-    return np.array(bounding_boxes, dtype=np.int32)
+    for bbox in od.bounding_boxes:
+        coords = bbox.as_box_coords_numpy_array().tolist()
+        class_label = class_name_to_label_map[bbox.class_label]
+        coords_and_label = [*coords, class_label]
+        bounding_boxes.append(coords_and_label)
+    return np.array(bounding_boxes, dtype=np.float32)
 
 
 def compute_ap(recall, precision, use_07_metric=False):
@@ -70,6 +69,17 @@ def compute_ap(recall, precision, use_07_metric=False):
         # and sum (\Delta recall) * prec
         ap = np.sum((mrec[i + 1] - mrec[i]) * mpre[i + 1])
     return ap
+
+
+def compute_iou_between_bboxes(bbox_1: np.ndarray, bbox_2: np.ndarray):
+    # noinspection PyTypeChecker
+    obbox1 = OrientedBbox2D.from_coords_list_and_label(bbox=bbox_1.tolist(), class_label='does-not-matter')
+    polygon_1 = obbox1.as_polygon_2d()
+
+    # noinspection PyTypeChecker
+    obbox2 = OrientedBbox2D.from_coords_list_and_label(bbox=bbox_2.tolist(), class_label='does-not-matter')
+    polygon_2 = obbox2.as_polygon_2d()
+    return polygon_1.compute_iou_with_polygon(other=polygon_2)
 
 
 def compute_metrics(detections, annotations, num_bboxes, cls_name, ovthresh=0.5, use_07_metric=False):
@@ -107,15 +117,20 @@ def compute_metrics(detections, annotations, num_bboxes, cls_name, ovthresh=0.5,
         for d in range(nd):
             R = class_bboxes[image_ids[d]]  # img_id is img_name
             bb = BB[d, :].astype(float)
+            _bb = forward_convert(np.array([bb]), False).squeeze()
             ovmax = -np.inf
             BBGT = R['bbox'].astype(float)
 
             if BBGT.size > 0:
                 overlaps = []
                 for i in range(len(BBGT)):
-                    overlap = iou_rotate.iou_rotate_calculate1(np.array([bb]),
-                                                               np.array([BBGT[i]]),
-                                                               use_gpu=False)[0][0]
+                    # Note: We have deliberately changed this part of the implementation because
+                    # we represent gt bboxes in quadrilateral format (4 coord pairs). So we
+                    # keep our ground truths in that format and change the prediction format to
+                    # quadrilateral format. This was necessary as forward_convert and backward_convert
+                    # change the coordinates slightly and in turn slightly changes the final metrics.
+                    # Because of this we are using shapely to compute iou which is also a bit slower.
+                    overlap = compute_iou_between_bboxes(_bb, BBGT[i])
                     overlaps.append(overlap)
                 ovmax = np.max(overlaps)
                 jmax = np.argmax(overlaps)
@@ -260,7 +275,6 @@ def _get_gt_class_bboxes_from_pv_dataset(dataset_dir: Path, class_name: str, cla
         od_file_path = dataset_dir / f'{Path(image_path).stem}.ground_truth.od.json'
         gtbboxes = _get_bounding_boxes_from_od_json_file(od_file_path=od_file_path,
                                                          class_name_to_label_map=class_name_to_label_map)
-        gtbboxes = backward_convert(gtbboxes, with_label=True)  # [x, y, w, h, theta, (label)]
         R = [gtbox for gtbox in gtbboxes if LABEL_NAME_MAP[gtbox[-1]] == class_name]
         num_bboxes = num_bboxes + len(R)
         bbox = np.array([x[:-1] for x in R])  # [x, y, w, h, theta]
@@ -367,9 +381,10 @@ def run_validation(dataset_dir: Path, class_name_to_label_map: Dict[str, int], c
 def get_all_checkpoints_from_checkpoint_dir(checkpoint_dir: Path) -> List[Path]:
     checkpoint_paths = tf.train.get_checkpoint_state(str(checkpoint_dir)).all_model_checkpoint_paths
     checkpoint_paths = [Path(checkpoint_path) for checkpoint_path in checkpoint_paths]
-    # paths in checkpoint files might be different from checkpoint_dir
+    # paths in checkpoint file might be different from checkpoint_dir
     checkpoint_paths = [checkpoint_dir / path.name for path in checkpoint_paths]
     return checkpoint_paths
+
 
 def get_step_from_checkpoint_path(checkpoint_path: Path) -> int:
     checkpoint_stem_name = checkpoint_path.stem
