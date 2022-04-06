@@ -7,6 +7,7 @@ from __future__ import print_function
 import argparse
 import os
 import sys
+import json
 from pathlib import Path
 from typing import List, Dict, Optional
 
@@ -23,9 +24,18 @@ from libs.box_utils import draw_box_in_img
 from libs.box_utils.coordinate_convert import forward_convert, backward_convert
 from libs.box_utils import nms_rotate
 from libs.box_utils.rotate_polygon_nms import rotate_gpu_nms
-from image_recognition.app.dvo.bbox_2d.oriented_bbox_2d import OrientedBbox2D
-from image_recognition.app.dvo.ground_truths.object_detection import ObjectDetectionLabeledData
-from image_recognition.app.data.dataset import Dataset, DataSignatures
+
+from pv_data_common.dvo.primitives.detection_2d.bbox_2d.oriented_bbox_2d_primitive import OrientedBbox2DPrimitive
+from pv_data_common.dvo.primitives.detection_2d.object_detection_2d_primitive import \
+    ObjectDetectionLabeledData2DPrimitive
+from pv_data_common.dataset.dataset_primitive import DatasetPrimitive
+from pv_data_common.dataset.data_signatures import DataSignatures
+
+
+def read_json(path_to_json_file: Path) -> Dict:
+    with open(str(path_to_json_file), 'r') as file:
+        data = json.load(file)
+    return data
 
 
 def _scale_bbox(bbox: np.ndarray, x_scale: float, y_scale: float) -> np.ndarray:
@@ -57,12 +67,12 @@ def get_checkpoint_path_from_checkpoint_dir(checkpoint_dir: Path) -> Path:
     checkpoint_paths = [Path(checkpoint_path) for checkpoint_path in checkpoint_paths]
     # paths in checkpoint files might be different from checkpoint_dir
     checkpoint_paths = [checkpoint_dir / path.name for path in checkpoint_paths]
-    assert len(checkpoint_paths) == 1, f'There should be only 1 checkpoint in the checkpoint directory'
+    assert len(checkpoint_paths) == 1, 'There should be only 1 checkpoint in the checkpoint directory'
     return checkpoint_paths[0]
 
 
 def get_csl_prediction_results(gpu_id: int, images: List[str], det_net: DetectionNetwork, rotated_iou_thresh: float,
-                               checkpoint_path: Optional[str] = None):
+                               checkpoint_path: Optional[str] = None) -> List:
     os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
     img_plac = tf.placeholder(dtype=tf.uint8, shape=[None, None, 3])  # is RGB. not BGR
     img_batch = tf.cast(img_plac, tf.float32)
@@ -86,7 +96,7 @@ def get_csl_prediction_results(gpu_id: int, images: List[str], det_net: Detectio
     prediction_results = []
     with tf.Session(config=config) as sess:
         sess.run(init_op)
-        assert restorer is not None, f'Restorer is None. Something went wrong!!!'
+        assert restorer is not None, 'Restorer is None. Something went wrong!!!'
         restorer.restore(sess, restore_ckpt)
         print(f'Restored model from {restore_ckpt}.')
 
@@ -104,8 +114,8 @@ def get_csl_prediction_results(gpu_id: int, images: List[str], det_net: Detectio
                 [img_batch, det_box_angles, det_scores, det_category], feed_dict={img_plac: img[:, :, ::-1]})
             assert len(resized_img) == 1, f'Something went wrong! There should be a single image in batch. Got ' \
                                           f'{resized_img.shape}.'
-            assert resized_img[0].shape == img.shape, f'Something went wrong! The shape of image being fed should be ' \
-                                                      f'equal to the image returned.'
+            assert resized_img[0].shape == img.shape, 'Something went wrong! The shape of image being fed should be ' \
+                                                      'equal to the image returned.'
             if box_res_rotate.size > 0:
                 box_res_rotate = forward_convert(box_res_rotate, False)
                 box_res_rotate[:, 0::2] *= (padded_w / resized_w)
@@ -180,7 +190,7 @@ def save_detections_for_images(det_net: DetectionNetwork, class_name_to_label_ma
 
     if args.mode == 'vis':
         print(f'Saving visualizations in {args.save_vis_dir}.')
-        assert args.save_vis_dir is not None, f'save_vis_dir cannot be None if mode is set to vis'
+        assert args.save_vis_dir is not None, 'save_vis_dir cannot be None if mode is set to vis'
         for prediction_result in prediction_results:
             image_name = Path(prediction_result['image_id']).name
             tools.mkdir(args.save_vis_dir)
@@ -200,8 +210,8 @@ def save_detections_for_images(det_net: DetectionNetwork, class_name_to_label_ma
                                                                                 in_graph=False)
             cv2.imwrite(draw_path, final_detections)
     elif args.mode == 'save_pred_od':
-        print(f"Saving .prediction.od.json's in dataset_dir.")
-        dataset = Dataset(dataset_dir=Path(args.dataset_dir))
+        print("Saving .prediction.od.json's in dataset_dir.")
+        dataset = DatasetPrimitive(dataset_dir=Path(args.dataset_dir))
         for prediction_result in prediction_results:
             detected_indices = prediction_result['scores'] >= args.conf_thresh
             confidence_scores = prediction_result['scores'][detected_indices]
@@ -214,15 +224,15 @@ def save_detections_for_images(det_net: DetectionNetwork, class_name_to_label_ma
             image_name = Path(prediction_result['image_id']).name
             rotated_boxes = forward_convert(detected_boxes, with_label=False)
 
-            ic = dataset.get_data_from_file(data_signature=DataSignatures.ic, file_name_stem=Path(image_name).stem)
+            ic = read_json(dataset.dataset_dir / (Path(image_name).stem + ".ic.json"))
             obboxes2d = []
             for rotated_box, score, class_name in zip(rotated_boxes, confidence_scores, class_names):
                 x1, y1, x2, y2, x3, y3, x4, y4 = rotated_box
-                obbox2d = OrientedBbox2D(x1=x1, y1=y1, x2=x2, y2=y2, x3=x3, y3=y3, x4=x4, y4=y4, confidence_score=score,
-                                         class_label=class_name)
+                obbox2d = OrientedBbox2DPrimitive(x1=x1, y1=y1, x2=x2, y2=y2, x3=x3, y3=y3, x4=x4, y4=y4,
+                                                  confidence_score=score, class_label=class_name)
                 obboxes2d.append(obbox2d)
-            pred_od = ObjectDetectionLabeledData(image_name=image_name, bounding_boxes=obboxes2d, width=ic.width,
-                                                 height=ic.height)
+            pred_od = ObjectDetectionLabeledData2DPrimitive(
+                image_name=image_name, bounding_boxes=obboxes2d, width=ic['width'], height=ic['height'])
             dataset.save_od_json(od=pred_od, data_signature=DataSignatures.od_predicted)
     else:
         raise AssertionError(f"mode is not supported: Got mode={args.mode}. Set to either 'vis' or 'save_pred_od'.")

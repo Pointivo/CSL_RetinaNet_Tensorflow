@@ -3,7 +3,6 @@ from __future__ import division
 from __future__ import print_function
 
 import argparse
-import json
 import os
 import sys
 from pathlib import Path
@@ -23,11 +22,11 @@ from libs.networks.build_whole_network import DetectionNetwork
 from libs.box_utils import nms_rotate
 from libs.box_utils.rotate_polygon_nms import rotate_gpu_nms
 from image_recognition.app.dvo.bbox_2d.oriented_bbox_2d import OrientedBbox2D
-from image_recognition.app.dvo.ground_truths.object_detection import ObjectDetectionLabeledData
+from image_recognition.app.dvo.ground_truths.object_detection_2d import ObjectDetectionLabeledData2D
 
 
 def _get_bounding_boxes_from_od_json_file(od_file_path: Path, class_name_to_label_map: Dict[str, int]) -> np.ndarray:
-    od = ObjectDetectionLabeledData.from_json_file(od_file_path)
+    od = ObjectDetectionLabeledData2D.from_json_file(od_file_path)
     bounding_boxes = []
     for bbox in od.bounding_boxes:
         coords = bbox.as_box_coords_numpy_array().tolist()
@@ -79,7 +78,7 @@ def compute_iou_between_bboxes(bbox_1: np.ndarray, bbox_2: np.ndarray):
     # noinspection PyTypeChecker
     obbox2 = OrientedBbox2D.from_coords_list_and_label(bbox=bbox_2.tolist(), class_label='does-not-matter')
     polygon_2 = obbox2.as_polygon_2d()
-    return polygon_1.compute_iou_with_polygon(other=polygon_2)
+    return polygon_1.iou_with(other=polygon_2)
 
 
 def compute_metrics(detections, annotations, num_bboxes, cls_name, ovthresh=0.5, use_07_metric=False):
