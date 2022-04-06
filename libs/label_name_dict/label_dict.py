@@ -52,10 +52,10 @@ def get_coco_label_dict():
     return NAME_LABEL_MAP
 
 
-if cfgs.DATASET_NAME == 'PENETRATION':
+if cfgs.DATASET_NAME == 'HVAC':
     NAME_LABEL_MAP = {
         'back_ground': 0,
-        'penetration': 1
+        'hvac': 1
     }
 elif cfgs.DATASET_NAME == 'WIDER':
     NAME_LABEL_MAP = {

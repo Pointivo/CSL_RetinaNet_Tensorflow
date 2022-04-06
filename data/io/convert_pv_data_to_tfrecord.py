@@ -3,7 +3,7 @@ from __future__ import division, print_function, absolute_import
 
 import sys
 from pathlib import Path
-from typing import List, Dict
+from typing import Dict
 
 import PIL.Image as Image
 
@@ -16,7 +16,7 @@ import json
 
 NAME_TO_LABEL_MAP = {
     'back_ground': 0,
-    'penetration': 1
+    'hvac': 1
 }
 
 
@@ -214,7 +214,17 @@ def convert_pv_data_to_tfrecord(pv_data_dir: Path, dataset: str, save_name: str,
 
 
 if __name__ == '__main__':
-    pv_data_dir = Path('path-to-pv-dataset')
-    class_name_to_label_map = {'back_ground': 0, 'penetration': 1}
-    convert_pv_data_to_tfrecord(pv_data_dir=pv_data_dir, dataset='PENETRATION', save_name='train', max_image_size=1500,
-                                min_box_dim_thresh=3, class_name_to_label_map=class_name_to_label_map)
+    """ `cd` to script directory before executing. """
+    import argparse
+
+    parser = argparse.ArgumentParser("Convert pv-format data to tfrecord")
+    parser.add_argument("--pv_data_dir", type=Path, required=True)
+    parser.add_argument("--save_name", type=str, required=True, help="train or test")
+    parser.add_argument("--max_image_size", type=int, default=1500)
+    parser.add_argument("--min_box_dim_thresh", type=int, default=3)
+    args = parser.parse_args()
+
+    class_name_to_label_map = {'back_ground': 0, 'hvac': 1}
+    convert_pv_data_to_tfrecord(
+        pv_data_dir=args.pv_data_dir, dataset='HVAC', save_name=args.save_name, max_image_size=args.max_image_size,
+        min_box_dim_thresh=args.min_box_dim_thresh, class_name_to_label_map=class_name_to_label_map)

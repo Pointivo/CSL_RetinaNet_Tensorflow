@@ -41,7 +41,7 @@ penetrations detection training.
 """
 
 # ------------------------------------------------
-VERSION = 'RetinaNet_Penetration_Patchwise_4x_26_Oct_2020'
+VERSION = 'RetinaNet_Hvac_Patchwise_4x_Feb_2022'
 NET_NAME = 'resnet152_v1d'  # 'MobilenetV2'
 ADD_BOX_IN_TENSORBOARD = True
 
@@ -82,7 +82,7 @@ REG_WEIGHT = 1.0
 ANGLE_WEIGHT = 0.5
 REG_LOSS_MODE = 1
 
-BATCH_SIZE = 1
+BATCH_SIZE = 1          # per-GPU
 EPSILON = 1e-5
 MOMENTUM = 0.9
 LR = 5e-4
@@ -91,11 +91,11 @@ MAX_ITERATION = int(80e3*5)
 WARM_SETP = int(80e3)
 
 # -------------------------------------------- Data_preprocess_config
-DATASET_NAME = 'PENETRATION'  # 'pascal', 'coco'
+DATASET_NAME = 'HVAC'  # 'pascal', 'coco'
 PIXEL_MEAN = [123.68, 116.779, 103.939]  # R, G, B. In tf, channel is RGB. In openCV, channel is BGR
 PIXEL_MEAN_ = [0.485, 0.456, 0.406]
 PIXEL_STD = [0.229, 0.224, 0.225]  # R, G, B. In tf, channel is RGB. In openCV, channel is BGR
-IMG_SHORT_SIDE_LEN = 1200
+IMG_SHORT_SIDE_LEN = 1200           # a list if IMAGE_PYRAMID=True
 IMG_MAX_LENGTH = 1200
 CLASS_NUM = 1
 LABEL_TYPE = 0
@@ -104,7 +104,7 @@ OMEGA = 1
 
 IMG_ROTATE = True
 RGB2GRAY = True
-VERTICAL_FLIP = False
+VERTICAL_FLIP = True
 HORIZONTAL_FLIP = True
 IMAGE_PYRAMID = False
 

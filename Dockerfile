@@ -13,7 +13,7 @@ RUN wget --quiet https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86
     /bin/bash -c ". /home/pv/conda/etc/profile.d/conda.sh && conda update -y -n base conda && \
     conda create -y -n pv python=3.6 && conda activate pv && pip install --upgrade pip && \
     conda install -y -c conda-forge uwsgi && pip install numpy==1.16.3 matplotlib==3.0.3 opencv-python==4.1.1.26  \
-    Pillow==6.2.0 tensorflow==1.13.1 tensorflow-plot==0.2.0"
+    Pillow==6.2.0 tensorflow-gpu==1.13.1 tensorflow-plot==0.2.0"
 
 RUN git clone --progress https://github.com/Pointivo/CSL_RetinaNet_Tensorflow /setup-csl
 WORKDIR /setup-csl
