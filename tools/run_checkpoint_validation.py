@@ -6,11 +6,13 @@ import argparse
 import os
 import sys
 from pathlib import Path
-from typing import List, Dict
+from typing import List, Dict, Union
 
 import cv2
 import numpy as np
 import tensorflow as tf
+from shapely.geometry import Polygon
+from shapely.ops import unary_union
 from tqdm import tqdm
 
 sys.path.append("../")
@@ -21,15 +23,33 @@ from libs.networks.build_whole_network import DetectionNetwork
 
 from libs.box_utils import nms_rotate
 from libs.box_utils.rotate_polygon_nms import rotate_gpu_nms
-from image_recognition.app.dvo.bbox_2d.oriented_bbox_2d import OrientedBbox2D
-from image_recognition.app.dvo.ground_truths.object_detection_2d import ObjectDetectionLabeledData2D
+from pv_data_common.dvo.primitives.detection_2d.bbox_2d.oriented_bbox_2d_primitive import OrientedBbox2DPrimitive
+from pv_data_common.dvo.primitives.detection_2d.object_detection_2d_primitive import \
+    ObjectDetectionLabeledData2DPrimitive
+
+
+def _obbox_from_coords_list_and_label(bbox: List[Union[int, float]], class_label: str) -> OrientedBbox2DPrimitive:
+    obbox = OrientedBbox2DPrimitive(x1=bbox[0], y1=bbox[1], x2=bbox[2], y2=bbox[3],
+                                    x3=bbox[4], y3=bbox[5], x4=bbox[6], y4=bbox[7], class_label=class_label)
+    return obbox
+
+
+def _obbox_as_box_coords_numpy_array(obbox: OrientedBbox2DPrimitive) -> np.ndarray:
+    return np.array([obbox.x1, obbox.y1, obbox.x2, obbox.y2, obbox.x3, obbox.y3, obbox.x4, obbox.y4], dtype=np.float32)
+
+
+def _obbox_as_shapely_polygon(obbox: OrientedBbox2DPrimitive) -> Polygon:
+    coordinates = [[[obbox.x1, obbox.y1], [obbox.x2, obbox.y2], [obbox.x3, obbox.y3], [obbox.x4, obbox.y4],
+                    [obbox.x1, obbox.y1]]]
+    polygon = Polygon(shell=coordinates[0], holes=coordinates[1:])
+    return polygon
 
 
 def _get_bounding_boxes_from_od_json_file(od_file_path: Path, class_name_to_label_map: Dict[str, int]) -> np.ndarray:
-    od = ObjectDetectionLabeledData2D.from_json_file(od_file_path)
+    od = ObjectDetectionLabeledData2DPrimitive.from_json_file(od_file_path)
     bounding_boxes = []
     for bbox in od.bounding_boxes:
-        coords = bbox.as_box_coords_numpy_array().tolist()
+        coords = _obbox_as_box_coords_numpy_array(obbox=bbox).tolist()
         class_label = class_name_to_label_map[bbox.class_label]
         coords_and_label = [*coords, class_label]
         bounding_boxes.append(coords_and_label)
@@ -71,14 +91,18 @@ def compute_ap(recall, precision, use_07_metric=False):
 
 
 def compute_iou_between_bboxes(bbox_1: np.ndarray, bbox_2: np.ndarray):
-    # noinspection PyTypeChecker
-    obbox1 = OrientedBbox2D.from_coords_list_and_label(bbox=bbox_1.tolist(), class_label='does-not-matter')
-    polygon_1 = obbox1.as_polygon_2d()
+    def _compute_iou(pg_1: Polygon, pg_2: Polygon) -> float:
+        iou = pg_1.intersection(pg_2).area / unary_union([pg_1, pg_2]).area
+        return iou
 
     # noinspection PyTypeChecker
-    obbox2 = OrientedBbox2D.from_coords_list_and_label(bbox=bbox_2.tolist(), class_label='does-not-matter')
-    polygon_2 = obbox2.as_polygon_2d()
-    return polygon_1.iou_with(other=polygon_2)
+    obbox1 = _obbox_from_coords_list_and_label(bbox=bbox_1.tolist(), class_label='does-not-matter')
+    polygon_1 = _obbox_as_shapely_polygon(obbox1)
+
+    # noinspection PyTypeChecker
+    obbox2 = _obbox_from_coords_list_and_label(bbox=bbox_2.tolist(), class_label='does-not-matter')
+    polygon_2 = _obbox_as_shapely_polygon(obbox2)
+    return _compute_iou(polygon_1, polygon_2)
 
 
 def compute_metrics(detections, annotations, num_bboxes, cls_name, ovthresh=0.5, use_07_metric=False):
@@ -444,7 +468,7 @@ if __name__ == '__main__':
     args = parse_args()
     print('Called with args:', args)
 
-    class_name_to_label_map = {'back_ground': 0, 'penetration': 1}
+    class_name_to_label_map = {'back_ground': 0, 'hvac': 1}
     os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
 
     run_validation_on_dataset(args=args, class_name_to_label_map=class_name_to_label_map)

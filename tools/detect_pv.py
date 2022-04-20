@@ -260,5 +260,5 @@ def parse_args():
 if __name__ == '__main__':
     args = parse_args()
     print(f'Called with args = {args}')
-    class_name_to_label_map = {'back_ground': 0, 'penetration': 1}
+    class_name_to_label_map = {'back_ground': 0, 'hvac': 1}
     detect(args=args, class_name_to_label_map=class_name_to_label_map)
