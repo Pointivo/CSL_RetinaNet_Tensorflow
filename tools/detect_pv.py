@@ -62,13 +62,22 @@ def _pad_image_with_zeros(image_np: np.ndarray) -> np.ndarray:
         return padded_image
 
 
-def get_checkpoint_path_from_checkpoint_dir(checkpoint_dir: Path) -> Path:
+def get_checkpoint_path_from_checkpoint_dir(checkpoint_dir: Path, checkpoint_iter: int = -1) -> Path:
+    def _get_iter_from_ckpt_name(name: str) -> int:
+        iteration = name[name.index('_') + 1: name.index('model')]
+        assert iteration.isnumeric(), f'Could not extract iteration from checkpoint name: {name}'
+        return int(iteration)
+
     checkpoint_paths = tf.train.get_checkpoint_state(str(checkpoint_dir)).all_model_checkpoint_paths
     checkpoint_paths = [Path(checkpoint_path) for checkpoint_path in checkpoint_paths]
     # paths in checkpoint files might be different from checkpoint_dir
     checkpoint_paths = [checkpoint_dir / path.name for path in checkpoint_paths]
-    assert len(checkpoint_paths) == 1, 'There should be only 1 checkpoint in the checkpoint directory'
-    return checkpoint_paths[0]
+    if checkpoint_iter == -1:  # latest
+        checkpoint_path = sorted(checkpoint_paths, key=lambda x: _get_iter_from_ckpt_name(name=x.name))
+        return checkpoint_path[-1]
+    checkpoint_path = [path for path in checkpoint_paths if _get_iter_from_ckpt_name(name=path.name) == checkpoint_iter]
+    assert len(checkpoint_path) == 1, f'Found more than one checkpoint for provided iteration (not possible!)'
+    return checkpoint_path[0]
 
 
 def get_csl_prediction_results(gpu_id: int, images: List[str], det_net: DetectionNetwork, rotated_iou_thresh: float,
@@ -183,7 +192,8 @@ def get_class_names_from_class_labels(class_labels: List[int], class_name_to_lab
 def save_detections_for_images(det_net: DetectionNetwork, class_name_to_label_map: Dict[str, int],
                                args: argparse.Namespace):
     image_paths = get_image_paths_from_dataset_dir(dataset_dir=args.dataset_dir, eval_num=args.eval_num)
-    checkpoint_path = get_checkpoint_path_from_checkpoint_dir(checkpoint_dir=Path(args.checkpoint_dir))
+    checkpoint_path = get_checkpoint_path_from_checkpoint_dir(checkpoint_dir=Path(args.checkpoint_dir),
+                                                              checkpoint_iter=args.checkpoint_iter)
     prediction_results = get_csl_prediction_results(gpu_id=args.gpu, images=image_paths, det_net=det_net,
                                                     rotated_iou_thresh=args.rotated_iou_thresh,
                                                     checkpoint_path=str(checkpoint_path))
@@ -247,6 +257,8 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset_dir', dest='dataset_dir', help='dataset with images', required=True, type=str)
     parser.add_argument('--checkpoint_dir', dest='checkpoint_dir', required=True, type=str)
+    parser.add_argument('--checkpoint_iter', dest='checkpoint_iter', default=-1, type=int,
+                        help='iteration for checkpoint to load (defaults to latest)')
     parser.add_argument('--mode', dest='mode', help='set to either vis or save_pred_od', required=True, type=str)
     parser.add_argument('--conf_thresh', dest='conf_thresh', default=0.1, type=float)
     parser.add_argument('--rotated_iou_thresh', dest='rotated_iou_thresh', default=0.1, type=float)
