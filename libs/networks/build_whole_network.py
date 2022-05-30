@@ -19,17 +19,20 @@ from libs.networks.resnet import add_heatmap
 
 class DetectionNetwork(object):
 
-    def __init__(self, base_network_name, is_training):
+    def __init__(self, base_network_name, is_training, class_num=None, anchor_ratios=None, omega=None):
 
         self.base_network_name = base_network_name
         self.is_training = is_training
+        self.class_num = cfgs.CLASS_NUM if class_num is None else class_num
+        self.anchor_ratios = cfgs.ANCHOR_RATIOS if anchor_ratios is None else anchor_ratios
+        self.omega = cfgs.OMEGA if omega is None else omega
         if cfgs.METHOD == 'H':
-            self.num_anchors_per_location = len(cfgs.ANCHOR_SCALES) * len(cfgs.ANCHOR_RATIOS)
+            self.num_anchors_per_location = len(cfgs.ANCHOR_SCALES) * len(self.anchor_ratios)
         else:
-            self.num_anchors_per_location = len(cfgs.ANCHOR_SCALES) * len(cfgs.ANCHOR_RATIOS) * len(cfgs.ANCHOR_ANGLES)
+            self.num_anchors_per_location = len(cfgs.ANCHOR_SCALES) * len(self.anchor_ratios) * len(cfgs.ANCHOR_ANGLES)
         self.method = cfgs.METHOD
         self.losses_dict = {}
-        self.angle_range = cfgs.ANGLE_RANGE // cfgs.OMEGA
+        self.angle_range = cfgs.ANGLE_RANGE // self.omega
 
     def build_base_network(self, input_img_batch):
 
@@ -65,7 +68,7 @@ class DetectionNetwork(object):
         add_heatmap(rpn_conv2d_3x3, name='cls_head_%s' % level)
 
         rpn_box_scores = slim.conv2d(rpn_conv2d_3x3,
-                                     num_outputs=cfgs.CLASS_NUM * self.num_anchors_per_location,
+                                     num_outputs=self.class_num * self.num_anchors_per_location,
                                      kernel_size=[3, 3],
                                      stride=1,
                                      weights_initializer=cfgs.SUBNETS_WEIGHTS_INITIALIZER,
@@ -74,7 +77,7 @@ class DetectionNetwork(object):
                                      activation_fn=None,
                                      reuse=reuse_flag)
 
-        rpn_box_scores = tf.reshape(rpn_box_scores, [-1, cfgs.CLASS_NUM],
+        rpn_box_scores = tf.reshape(rpn_box_scores, [-1, self.class_num],
                                     name='rpn_{}_classification_reshape'.format(level))
         rpn_box_probs = tf.sigmoid(rpn_box_scores, name='rpn_{}_classification_sigmoid'.format(level))
 
@@ -181,14 +184,14 @@ class DetectionNetwork(object):
                     if self.method == 'H':
                         tmp_anchors = tf.py_func(generate_anchors.generate_anchors_pre,
                                                  inp=[featuremap_height, featuremap_width, stride,
-                                                      np.array(cfgs.ANCHOR_SCALES) * stride, cfgs.ANCHOR_RATIOS, 4.0],
+                                                      np.array(cfgs.ANCHOR_SCALES) * stride, self.anchor_ratios, 4.0],
                                                  Tout=[tf.float32])
 
                         tmp_anchors = tf.reshape(tmp_anchors, [-1, 4])
                     else:
                         tmp_anchors = generate_rotate_anchors.make_anchors(base_anchor_size=base_anchor_size,
                                                                            anchor_scales=cfgs.ANCHOR_SCALES,
-                                                                           anchor_ratios=cfgs.ANCHOR_RATIOS,
+                                                                           anchor_ratios=self.anchor_ratios,
                                                                            anchor_angles=cfgs.ANCHOR_ANGLES,
                                                                            featuremap_height=featuremap_height,
                                                                            featuremap_width=featuremap_width,
@@ -276,7 +279,9 @@ class DetectionNetwork(object):
                                                                          rpn_cls_prob=rpn_cls_prob,
                                                                          rpn_angle_prob=tf.sigmoid(rpn_angle_cls),
                                                                          anchors=anchors,
-                                                                         is_training=self.is_training)
+                                                                         is_training=self.is_training,
+                                                                         class_num=self.class_num,
+                                                                         omega=self.omega)
             boxes = tf.stop_gradient(boxes)
             scores = tf.stop_gradient(scores)
             category = tf.stop_gradient(category)

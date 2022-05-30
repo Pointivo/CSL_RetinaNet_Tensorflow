@@ -8,13 +8,18 @@ import numpy as np
 from libs.box_utils.coordinate_convert import coordinate_present_convert, coords_regular
 
 
-def postprocess_detctions(rpn_bbox_pred, rpn_cls_prob, rpn_angle_prob, anchors, is_training):
+def postprocess_detctions(rpn_bbox_pred, rpn_cls_prob, rpn_angle_prob, anchors, is_training, class_num=None,
+                          omega=None):
+    if class_num is None:
+        class_num = cfgs.CLASS_NUM
+    if omega is None:
+        omega = cfgs.OMEGA
 
     return_boxes_pred = []
     return_boxes_pred_angle = []
     return_scores = []
     return_labels = []
-    for j in range(0, cfgs.CLASS_NUM):
+    for j in range(0, class_num):
         scores = rpn_cls_prob[:, j]
         if is_training:
             indices = tf.reshape(tf.where(tf.greater(scores, cfgs.VIS_SCORE)), [-1, ])
@@ -44,7 +49,7 @@ def postprocess_detctions(rpn_bbox_pred, rpn_cls_prob, rpn_angle_prob, anchors, 
         boxes_pred = bbox_transform.rbbox_transform_inv(boxes=anchors_, deltas=rpn_bbox_pred_)
 
         boxes_pred = tf.reshape(boxes_pred, [-1, 5])
-        angle_cls = (tf.reshape(angle_cls, [-1, ]) * -1 - 0.5) * cfgs.OMEGA
+        angle_cls = (tf.reshape(angle_cls, [-1, ]) * -1 - 0.5) * omega
 
         x, y, w, h, theta = tf.unstack(boxes_pred, axis=1)
         boxes_pred_angle = tf.transpose(tf.stack([x, y, w, h, angle_cls]))
