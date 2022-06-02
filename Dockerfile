@@ -2,6 +2,12 @@ FROM nvidia/cuda:10.0-cudnn7-devel-ubuntu18.04 as nvidia_cuda10
 
 # ubuntu setup
 ARG DEBIAN_FRONTEND=noninteractive
+
+# Workaround for https://github.com/NVIDIA/nvidia-docker/issues/1631
+# TODO: Revisit this in August 2022 and remove if not needed
+COPY ./deployment_util/update_nvidia_docker_gpg_keys.sh /tmp/update_nvidia_docker_gpg_keys.sh
+RUN /bin/bash /tmp/update_nvidia_docker_gpg_keys.sh
+
 RUN apt-get update && apt-get install -y --no-install-recommends wget git build-essential dialog apt-utils libglib2.0 \
  libsm6 libfontconfig1 libxrender1 libxext6 libgl1-mesa-glx && apt-get clean && rm -rf /var/lib/apt/lists/* && \
  useradd -ms /bin/bash pv
