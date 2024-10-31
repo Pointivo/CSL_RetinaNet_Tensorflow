@@ -62,7 +62,7 @@ from libs.networks.slim_nets import resnet_utils
 
 
 resnet_arg_scope = resnet_utils.resnet_arg_scope
-slim = tf.contrib.slim
+import tf_slim as slim
 
 
 @slim.add_arg_scope

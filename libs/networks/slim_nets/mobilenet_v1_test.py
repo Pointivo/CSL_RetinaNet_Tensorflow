@@ -23,7 +23,7 @@ import tensorflow as tf
 
 from nets import mobilenet_v1
 
-slim = tf.contrib.slim
+import tf_slim as slim
 
 
 class MobilenetV1Test(tf.test.TestCase):

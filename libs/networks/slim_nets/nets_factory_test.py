@@ -23,7 +23,7 @@ import tensorflow as tf
 
 from nets import nets_factory
 
-slim = tf.contrib.slim
+import tf_slim as slim
 
 
 class NetworksTest(tf.test.TestCase):

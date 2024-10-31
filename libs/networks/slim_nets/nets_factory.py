@@ -31,7 +31,7 @@ from nets import resnet_v1
 from nets import resnet_v2
 from nets import vgg
 
-slim = tf.contrib.slim
+import tf_slim as slim
 
 networks_map = {'alexnet_v2': alexnet.alexnet_v2,
                 'cifarnet': cifarnet.cifarnet,

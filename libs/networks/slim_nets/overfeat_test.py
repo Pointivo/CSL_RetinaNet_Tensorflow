@@ -21,7 +21,7 @@ import tensorflow as tf
 
 from nets import overfeat
 
-slim = tf.contrib.slim
+import tf_slim as slim
 
 
 class OverFeatTest(tf.test.TestCase):

@@ -20,7 +20,7 @@ from __future__ import print_function
 
 import tensorflow as tf
 
-slim = tf.contrib.slim
+import tf_slim as slim
 
 trunc_normal = lambda stddev: tf.truncated_normal_initializer(stddev=stddev)
 
