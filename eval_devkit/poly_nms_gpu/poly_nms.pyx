@@ -6,7 +6,7 @@ assert sizeof(int) == sizeof(np.int32_t)
 cdef extern from "poly_nms.hpp":
     void _poly_nms(np.int32_t*, int*, np.float32_t*, int, int, float, int)
 
-def poly_gpu_nms(np.ndarray[np.float32_t, ndim=2] dets, np.float thresh,
+def poly_gpu_nms(np.ndarray[np.float32_t, ndim=2] dets, np.float64_t thresh,
             np.int32_t device_id=0):
     cdef int boxes_num = dets.shape[0]
     cdef int boxes_dim = dets.shape[1]

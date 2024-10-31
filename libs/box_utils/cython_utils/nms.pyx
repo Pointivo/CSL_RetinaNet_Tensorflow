@@ -14,7 +14,7 @@ cdef inline np.float32_t max(np.float32_t a, np.float32_t b):
 cdef inline np.float32_t min(np.float32_t a, np.float32_t b):
     return a if a <= b else b
 
-def nms(np.ndarray[np.float32_t, ndim=2] dets, np.float thresh):
+def nms(np.ndarray[np.float32_t, ndim=2] dets, np.float64_t thresh):
     cdef np.ndarray[np.float32_t, ndim=1] x1 = dets[:, 0]
     cdef np.ndarray[np.float32_t, ndim=1] y1 = dets[:, 1]
     cdef np.ndarray[np.float32_t, ndim=1] x2 = dets[:, 2]
@@ -67,7 +67,7 @@ def nms(np.ndarray[np.float32_t, ndim=2] dets, np.float thresh):
 
     return keep
 
-def nms_new(np.ndarray[np.float32_t, ndim=2] dets, np.float thresh):
+def nms_new(np.ndarray[np.float32_t, ndim=2] dets, np.float64_t thresh):
     cdef np.ndarray[np.float32_t, ndim=1] x1 = dets[:, 0]
     cdef np.ndarray[np.float32_t, ndim=1] y1 = dets[:, 1]
     cdef np.ndarray[np.float32_t, ndim=1] x2 = dets[:, 2]

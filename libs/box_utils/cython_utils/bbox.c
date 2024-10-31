@@ -883,7 +883,7 @@ typedef npy_longdouble __pyx_t_5numpy_longdouble_t;
 
 /* "bbox.pyx":13
  * 
- * DTYPE = np.float
+ * DTYPE = np.float64_t
  * ctypedef np.float_t DTYPE_t             # <<<<<<<<<<<<<<
  * 
  * def bbox_overlaps_float(
@@ -8307,7 +8307,7 @@ PyMODINIT_FUNC PyInit_cython_bbox(void)
   /* "bbox.pyx":12
  * cimport numpy as np
  * 
- * DTYPE = np.float             # <<<<<<<<<<<<<<
+ * DTYPE = np.float64_t             # <<<<<<<<<<<<<<
  * ctypedef np.float_t DTYPE_t
  * 
  */
