@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, print_function, division
 
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 import numpy as np
 import cv2
 import time
 from libs.box_utils.show_box_in_tensor import only_draw_boxes
 
+tf.disable_v2_behavior()
 
 def make_anchors(base_anchor_size, anchor_scales, anchor_ratios, anchor_angles,
                  featuremap_height, featuremap_width, stride, name='make_ratate_anchors'):

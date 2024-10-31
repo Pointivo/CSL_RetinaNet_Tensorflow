@@ -19,7 +19,7 @@ from __future__ import division
 from __future__ import print_function
 import functools
 
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 from nets import alexnet
 from nets import cifarnet
@@ -32,6 +32,7 @@ from nets import resnet_v2
 from nets import vgg
 
 import tf_slim as slim
+tf.disable_v2_behavior()
 
 networks_map = {'alexnet_v2': alexnet.alexnet_v2,
                 'cifarnet': cifarnet.cifarnet,

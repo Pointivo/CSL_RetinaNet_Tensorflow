@@ -19,12 +19,13 @@ from __future__ import division
 from __future__ import print_function
 
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 from nets import resnet_utils
 from nets import resnet_v2
 
 import tf_slim as slim
+tf.disable_v2_behavior()
 
 
 def create_test_input(batch_size, height, width, channels):

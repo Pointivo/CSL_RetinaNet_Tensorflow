@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, print_function, division
 
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 import sys
 sys.path.append('../..')
 
 from libs.configs import cfgs
+tf.disable_v2_behavior()
 
 
 def make_anchors(base_anchor_size, anchor_scales, anchor_ratios,

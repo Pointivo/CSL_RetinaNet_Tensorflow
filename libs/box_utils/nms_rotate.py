@@ -7,8 +7,9 @@ from __future__ import print_function
 import numpy as np
 import cv2
 from libs.configs import cfgs
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 from libs.box_utils.rotate_polygon_nms import rotate_gpu_nms
+tf.disable_v2_behavior()
 
 
 def nms_rotate(decode_boxes, scores, iou_threshold, max_output_size,

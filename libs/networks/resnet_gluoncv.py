@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, division, print_function
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 import tensorflow.contrib.slim as slim
+tf.disable_v2_behavior()
 
 from libs.configs import cfgs
 from libs.networks.resnet import fusion_two_layer, add_heatmap

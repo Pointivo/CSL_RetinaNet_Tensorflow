@@ -3,8 +3,8 @@
 from __future__ import absolute_import, division, print_function
 
 import os
-import tensorflow as tf
-import tensorflow.contrib.slim as slim
+import tensorflow.compat.v1 as tf
+import tf_slim as slim
 import numpy as np
 
 from libs.networks import resnet, resnet_gluoncv, mobilenet_v2, xception
@@ -16,6 +16,7 @@ from libs.detection_oprations.proposal_opr_ import postprocess_detctions
 from libs.detection_oprations.anchor_target_layer_without_boxweight import anchor_target_layer
 from libs.networks.resnet import add_heatmap
 
+tf.disable_v2_behavior()
 
 class DetectionNetwork(object):
 

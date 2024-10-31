@@ -18,10 +18,11 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 import copy
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 from nets.mobilenet import conv_blocks as ops
 from nets.mobilenet import mobilenet
 from nets.mobilenet import mobilenet_v2
+tf.disable_v2_behavior()
 
 
 import tf_slim as slim

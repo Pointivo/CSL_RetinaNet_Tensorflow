@@ -4,13 +4,14 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
 
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 import tensorflow.contrib.slim as slim
 import os
 import sys
 import numpy as np
 import time
 sys.path.append("../")
+tf.disable_v2_behavior()
 
 from libs.configs import cfgs
 from libs.networks import build_whole_network

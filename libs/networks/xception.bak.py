@@ -1,4 +1,5 @@
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
+tf.disable_v2_behavior()
 
 USE_FUSED_BN = True
 BN_EPSILON = 0.001

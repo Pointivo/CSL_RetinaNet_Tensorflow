@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 from __future__ import division, print_function, absolute_import
 import os
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 import math
+tf.disable_v2_behavior()
 
 """
 pulse label, omega=1

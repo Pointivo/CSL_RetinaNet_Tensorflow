@@ -56,9 +56,10 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 from libs.networks.slim_nets import resnet_utils
+tf.disable_v2_behavior()
 
 
 resnet_arg_scope = resnet_utils.resnet_arg_scope

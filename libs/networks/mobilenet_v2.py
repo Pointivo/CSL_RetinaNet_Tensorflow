@@ -2,7 +2,7 @@
 
 from __future__ import absolute_import, print_function, division
 import tensorflow.contrib.slim as slim
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 from libs.networks.mobilenet import mobilenet_v2
 from libs.networks.mobilenet.mobilenet import training_scope
@@ -11,6 +11,7 @@ from libs.networks.mobilenet.mobilenet_v2 import ops
 from libs.networks.resnet import fusion_two_layer
 from libs.configs import cfgs
 expand_input = ops.expand_input_by_factor
+tf.disable_v2_behavior()
 
 V2_BASE_DEF = dict(
     defaults={

@@ -5,7 +5,7 @@ from __future__ import print_function
 from __future__ import division
 
 import os, sys
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 import time
 import cv2
 import argparse
@@ -17,6 +17,7 @@ from libs.configs import cfgs
 from libs.networks import build_whole_network
 from libs.box_utils import draw_box_in_img
 from help_utils import tools
+tf.disable_v2_behavior()
 
 
 def detect(det_net, inference_save_path, real_test_imgname_list):

@@ -6,7 +6,7 @@ from __future__ import division
 
 import os
 import sys
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 import time
 import cv2
 import pickle
@@ -14,6 +14,7 @@ import numpy as np
 import argparse
 from tqdm import tqdm
 sys.path.append("../")
+tf.disable_v2_behavior()
 
 from data.io.image_preprocess import short_side_resize_for_inference_data
 from libs.configs import cfgs

@@ -1,5 +1,5 @@
-import tensorflow as tf
-import tensorflow.contrib.slim as slim
+import tensorflow.compat.v1 as tf
+import tf_slim as slim
 
 from libs.configs import cfgs
 
@@ -7,6 +7,7 @@ USE_FUSED_BN = True
 BN_EPSILON = 0.001
 BN_MOMENTUM = 0.99
 
+tf.disable_v2_behavior()
 
 def fusion_two_layer(C_i, P_j, scope):
     '''

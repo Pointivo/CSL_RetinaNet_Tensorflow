@@ -6,7 +6,7 @@ from __future__ import division
 
 import os
 import sys
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 import cv2
 import numpy as np
 import math
@@ -14,6 +14,7 @@ from tqdm import tqdm
 import argparse
 from multiprocessing import Queue, Process
 sys.path.append("../")
+tf.disable_v2_behavior()
 
 from data.io.image_preprocess import short_side_resize_for_inference_data
 from libs.networks import build_whole_network_ohdet

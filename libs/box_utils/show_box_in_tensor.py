@@ -4,10 +4,11 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 from libs.box_utils import draw_box_in_img
 
+tf.disable_v2_behavior()
 
 def only_draw_boxes(img_batch, boxes, method, head=None):
 

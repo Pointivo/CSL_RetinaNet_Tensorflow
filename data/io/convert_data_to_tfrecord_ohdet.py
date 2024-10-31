@@ -4,11 +4,12 @@ import sys
 sys.path.append('../../')
 import xml.etree.cElementTree as ET
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 import glob
 import cv2
 from libs.label_name_dict.label_dict import *
 from help_utils.tools import *
+tf.disable_v2_behavior()
 
 tf.app.flags.DEFINE_string('VOC_dir', '/data/yangxue/dataset/DOTA/DOTA1.0/trainval', 'Voc dir')
 tf.app.flags.DEFINE_string('xml_dir', 'labeltxt', 'xml dir')

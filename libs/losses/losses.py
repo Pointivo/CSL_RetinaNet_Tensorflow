@@ -3,7 +3,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
+tf.disable_v2_behavior()
 
 from libs.box_utils import bbox_transform
 from libs.box_utils.iou_rotate import iou_rotate_calculate2

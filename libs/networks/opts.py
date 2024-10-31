@@ -2,7 +2,8 @@
 
 from __future__ import absolute_import, division, print_function
 
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
+tf.disable_v2_behavior()
 
 
 def norm(x, norm_type, is_train, name, G=32, esp=1e-5):

@@ -2,10 +2,11 @@
 from libs.configs import cfgs
 from libs.box_utils import bbox_transform
 from libs.box_utils import nms_rotate
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 import numpy as np
 
 from libs.box_utils.coordinate_convert import coordinate_present_convert, coords_regular
+tf.disable_v2_behavior()
 
 
 def postprocess_detctions(rpn_bbox_pred, rpn_cls_prob, rpn_angle_prob, anchors, is_training, class_num=None,

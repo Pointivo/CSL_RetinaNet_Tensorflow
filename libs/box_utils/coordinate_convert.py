@@ -6,8 +6,9 @@ from __future__ import print_function
 
 import cv2
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
+tf.disable_v2_behavior()
 
 def forward_convert(coordinate, with_label=True):
     """

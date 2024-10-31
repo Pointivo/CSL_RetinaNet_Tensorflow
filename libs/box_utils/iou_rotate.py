@@ -5,8 +5,9 @@ from __future__ import division
 from __future__ import print_function
 
 import time
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 import sys
+tf.disable_v2_behavior()
 
 sys.path.append('../..')
 from libs.box_utils.coordinate_convert import *

@@ -4,13 +4,14 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
 
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 import os
 import sys
 sys.path.append('../../')
 
 from data.io import image_preprocess_multi_gpu_ohdet as image_preprocess
 from libs.configs import cfgs
+tf.disable_v2_behavior()
 
 
 def read_single_example_and_decode(filename_queue):

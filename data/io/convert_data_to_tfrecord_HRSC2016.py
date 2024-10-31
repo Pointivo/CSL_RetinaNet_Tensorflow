@@ -4,14 +4,17 @@ import sys
 sys.path.append('../../')
 import xml.etree.cElementTree as ET
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 import glob
 import cv2
 from tqdm import tqdm
 import os
+tf.disable_v2_behavior()
 
 from help_utils.tools import mkdir
 from help_utils.tools import *
+
+tf.disable_v2_behavior()
 
 
 tf.app.flags.DEFINE_string('VOC_dir', '/data/dataset/HRSC2016/HRSC2016/FullDataSet/', 'Voc dir')
