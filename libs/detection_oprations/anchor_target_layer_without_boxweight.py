@@ -25,8 +25,8 @@ def anchor_target_layer(gt_boxes_h, gt_boxes_r, gt_smooth_label, anchors, gpu_id
         # [N, M]
 
         if cfgs.METHOD == 'H':
-            overlaps = bbox_overlaps(np.ascontiguousarray(anchors, dtype=np.float),
-                                     np.ascontiguousarray(gt_boxes_h, dtype=np.float))
+            overlaps = bbox_overlaps(np.ascontiguousarray(anchors, dtype=np.float64),
+                                     np.ascontiguousarray(gt_boxes_h, dtype=np.float64))
         else:
             overlaps = rbbx_overlaps(np.ascontiguousarray(anchors, dtype=np.float32),
                                      np.ascontiguousarray(gt_boxes_r[:, :-1], dtype=np.float32), gpu_id)
