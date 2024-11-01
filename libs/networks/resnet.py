@@ -6,10 +6,9 @@ from __future__ import absolute_import, print_function, division
 import tensorflow.compat.v1 as tf
 import tf_slim as slim
 from libs.configs import cfgs
-from tensorflow.contrib.slim.nets import resnet_v1
-from tensorflow.contrib.slim.nets import resnet_utils
-from tensorflow.contrib.slim.python.slim.nets.resnet_v1 import resnet_v1_block
-import tfplot as tfp
+from tf_slim.nets import resnet_v1
+from tf_slim.nets import resnet_utils
+from tf_slim.nets.resnet_v1 import resnet_v1_block
 
 tf.disable_v2_behavior()
 
@@ -77,6 +76,7 @@ def add_heatmap(feature_maps, name):
     :param feature_maps:[B, H, W, C]
     :return:
     '''
+    import tfplot as tfp
 
     def figure_attention(activation):
         fig, ax = tfp.subplots()

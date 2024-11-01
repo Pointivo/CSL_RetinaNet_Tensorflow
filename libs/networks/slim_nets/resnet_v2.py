@@ -28,7 +28,7 @@ The key difference of the full preactivation 'v2' variant compared to the
 
 Typical use:
 
-   from tensorflow.contrib.slim.slim_nets import resnet_v2
+   from tf_slim.slim_nets import resnet_v2
 
 ResNet-101 for image classification into 1000 classes:
 

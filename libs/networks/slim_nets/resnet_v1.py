@@ -34,7 +34,7 @@ units.
 
 Typical use:
 
-   from tensorflow.contrib.slim.slim_nets import resnet_v1
+   from tf_slim.slim_nets import resnet_v1
 
 ResNet-101 for image classification into 1000 classes:
 
