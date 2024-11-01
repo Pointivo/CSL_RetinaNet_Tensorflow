@@ -4,7 +4,7 @@ from __future__ import absolute_import, print_function, division
 
 
 import tensorflow.compat.v1 as tf
-import tensorflow.contrib.slim as slim
+import tf_slim as slim
 from libs.configs import cfgs
 from tensorflow.contrib.slim.nets import resnet_v1
 from tensorflow.contrib.slim.nets import resnet_utils

@@ -5,7 +5,7 @@ from __future__ import print_function
 from __future__ import division
 
 import tensorflow.compat.v1 as tf
-import tensorflow.contrib.slim as slim
+import tf_slim as slim
 import os
 import sys
 import numpy as np

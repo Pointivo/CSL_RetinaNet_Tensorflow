@@ -183,7 +183,7 @@ if __name__ == '__main__':
     import numpy as np
     # from tensorflow.python.keras._impl.keras.applications.imagenet_utils import decode_predictions  # pylint: disable=unused-import
     import scipy
-    import tensorflow.contrib.slim as slim
+    import tf_slim as slim
 
     tf.reset_default_graph()
 

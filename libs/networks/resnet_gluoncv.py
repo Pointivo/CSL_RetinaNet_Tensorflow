@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, division, print_function
 import tensorflow.compat.v1 as tf
-import tensorflow.contrib.slim as slim
+import tf_slim as slim
 tf.disable_v2_behavior()
 
 from libs.configs import cfgs
