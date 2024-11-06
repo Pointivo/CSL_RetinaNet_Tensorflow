@@ -11,7 +11,7 @@ from tf_slim.nets.resnet_v1 import resnet_v1_block
 from libs.configs import cfgs
 
 tf.disable_v2_behavior()
-
+tf.compat.v1.enable_eager_execution()
 
 def resnet_arg_scope(
         is_training=True, weight_decay=cfgs.WEIGHT_DECAY, batch_norm_decay=0.997,
