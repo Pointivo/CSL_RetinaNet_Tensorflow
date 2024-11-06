@@ -11,7 +11,6 @@ from tf_slim.nets.resnet_v1 import resnet_v1_block
 from libs.configs import cfgs
 
 tf.disable_v2_behavior()
-tf.compat.v1.enable_eager_execution()
 
 def resnet_arg_scope(
         is_training=True, weight_decay=cfgs.WEIGHT_DECAY, batch_norm_decay=0.997,
@@ -77,13 +76,12 @@ def add_heatmap(feature_maps, name):
     :param feature_maps:[B, H, W, C]
     :return:
     '''
-
-    heatmap = tf.reduce_sum(feature_maps, axis=-1)
-    heatmap = tf.squeeze(heatmap, axis=0)
-    heatmap = tf.cast(heatmap, tf.float32)  # Ensure the data type is compatible with imshow()
-
-    # Convert the TensorFlow tensor to a NumPy array
-    heatmap_np = heatmap.numpy()
+    with tf.Session() as sess:
+        heatmap = tf.reduce_sum(feature_maps, axis=-1)
+        heatmap = tf.squeeze(heatmap, axis=0)
+        heatmap = tf.cast(heatmap, tf.float32)  # Ensure the data type is compatible with imshow()
+        # Convert the TensorFlow tensor to a NumPy array
+        heatmap_np = sess.run(heatmap.numpy())
 
     fig, ax = plt.subplots()
     im = ax.imshow(heatmap_np, cmap='jet')
