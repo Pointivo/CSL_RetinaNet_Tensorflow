@@ -12,6 +12,7 @@ from libs.configs import cfgs
 
 tf.disable_v2_behavior()
 
+
 def resnet_arg_scope(
         is_training=True, weight_decay=cfgs.WEIGHT_DECAY, batch_norm_decay=0.997,
         batch_norm_epsilon=1e-5, batch_norm_scale=True):
@@ -77,17 +78,14 @@ def add_heatmap(feature_maps, name):
     :return:
     '''
     with tf.Session() as sess:
-        heatmap = tf.reduce_sum(feature_maps, axis=-1)
-        heatmap = tf.squeeze(heatmap, axis=0)
-        heatmap = tf.cast(heatmap, tf.float32)  # Ensure the data type is compatible with imshow()
-        # Convert the TensorFlow tensor to a NumPy array
-        heatmap_np = sess.run(heatmap.numpy())
+        heatmap = sess.run(tf.squeeze(tf.reduce_sum(feature_maps, axis=-1), axis=0))
 
     fig, ax = plt.subplots()
-    im = ax.imshow(heatmap_np, cmap='jet')
+    im = ax.imshow(heatmap, cmap='jet')
     fig.colorbar(im)
     with tf.summary.create_file_writer('logs').as_default():
         tf.summary.image(name, plt.gcf(), step=0)
+
 
 def resnet_base(img_batch, scope_name, is_training=True):
     if scope_name == 'resnet_v1_50':
