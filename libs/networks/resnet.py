@@ -2,15 +2,16 @@
 
 from __future__ import absolute_import, print_function, division
 
-
+import matplotlib.pyplot as plt
 import tensorflow.compat.v1 as tf
 import tf_slim as slim
-from libs.configs import cfgs
-from tf_slim.nets import resnet_v1
-from tf_slim.nets import resnet_utils
+from tf_slim.nets import resnet_v1, resnet_utils
 from tf_slim.nets.resnet_v1 import resnet_v1_block
 
+from libs.configs import cfgs
+
 tf.disable_v2_behavior()
+
 
 def resnet_arg_scope(
         is_training=True, weight_decay=cfgs.WEIGHT_DECAY, batch_norm_decay=0.997,
@@ -54,14 +55,14 @@ def fusion_two_layer(C_i, P_j, scope):
         h, w = tf.shape(C_i)[1], tf.shape(C_i)[2]
         upsample_p = tf.image.resize_bilinear(P_j,
                                               size=[h, w],
-                                              name='up_sample_'+level_name)
+                                              name='up_sample_' + level_name)
 
         reduce_dim_c = slim.conv2d(C_i,
                                    num_outputs=256,
                                    kernel_size=[1, 1], stride=1,
-                                   scope='reduce_dim_'+level_name)
+                                   scope='reduce_dim_' + level_name)
 
-        add_f = 0.5*upsample_p + 0.5*reduce_dim_c
+        add_f = 0.5 * upsample_p + 0.5 * reduce_dim_c
 
         # P_i = slim.conv2d(add_f,
         #                   num_outputs=256, kernel_size=[3, 3], stride=1,
@@ -76,21 +77,17 @@ def add_heatmap(feature_maps, name):
     :param feature_maps:[B, H, W, C]
     :return:
     '''
-    import tfplot as tfp
-
-    def figure_attention(activation):
-        fig, ax = tfp.subplots()
-        im = ax.imshow(activation, cmap='jet')
-        fig.colorbar(im)
-        return fig
 
     heatmap = tf.reduce_sum(feature_maps, axis=-1)
     heatmap = tf.squeeze(heatmap, axis=0)
-    tfp.summary.plot(name, figure_attention, [heatmap])
+    fig, ax = plt.subplots()
+    im = ax.imshow(heatmap, cmap='jet')
+    fig.colorbar(im)
+    with tf.summary.create_file_writer('logs').as_default():
+        tf.summary.image(name, plt.gcf(), step=0)
 
 
 def resnet_base(img_batch, scope_name, is_training=True):
-
     if scope_name == 'resnet_v1_50':
         middle_num_units = 6
     elif scope_name == 'resnet_v1_101':
@@ -114,7 +111,7 @@ def resnet_base(img_batch, scope_name, is_training=True):
             net = slim.max_pool2d(
                 net, [3, 3], stride=2, padding='VALID', scope='pool1')
 
-    not_freezed = [False] * cfgs.FIXED_BLOCKS + (4-cfgs.FIXED_BLOCKS)*[True]
+    not_freezed = [False] * cfgs.FIXED_BLOCKS + (4 - cfgs.FIXED_BLOCKS) * [True]
     # Fixed_Blocks can be 1~3
 
     with slim.arg_scope(resnet_arg_scope(is_training=(is_training and not_freezed[0]))):
