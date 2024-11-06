@@ -80,6 +80,8 @@ def add_heatmap(feature_maps, name):
 
     heatmap = tf.reduce_sum(feature_maps, axis=-1)
     heatmap = tf.squeeze(heatmap, axis=0)
+    heatmap = tf.cast(heatmap, tf.float32)  # Ensure the data type is compatible with imshow()
+
     fig, ax = plt.subplots()
     im = ax.imshow(heatmap, cmap='jet')
     fig.colorbar(im)
