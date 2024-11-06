@@ -82,12 +82,14 @@ def add_heatmap(feature_maps, name):
     heatmap = tf.squeeze(heatmap, axis=0)
     heatmap = tf.cast(heatmap, tf.float32)  # Ensure the data type is compatible with imshow()
 
+    # Convert the TensorFlow tensor to a NumPy array
+    heatmap_np = heatmap.numpy()
+
     fig, ax = plt.subplots()
-    im = ax.imshow(heatmap, cmap='jet')
+    im = ax.imshow(heatmap_np, cmap='jet')
     fig.colorbar(im)
     with tf.summary.create_file_writer('logs').as_default():
         tf.summary.image(name, plt.gcf(), step=0)
-
 
 def resnet_base(img_batch, scope_name, is_training=True):
     if scope_name == 'resnet_v1_50':
